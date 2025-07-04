@@ -571,7 +571,7 @@ SkillMgr.Variables = {
 	SKM_CHAINSTART = { default = false, cast = "boolean", profile = "chainstart", readable = "", section = "fighting", group = "" },
 	SKM_CHAINNAME = { default = "", cast = "string", profile = "chainname", readable = "", section = "fighting", group = "" },
 	SKM_CHAINEND = { default = false, cast = "boolean", profile = "chainend", readable = "", section = "fighting", group = "" },
-	
+	--[[
 	SKM_GAUGE1LT = { default = 0, cast = "number", profile = "gauge1lt", readable = "", section = "fighting", group = "" },
 	SKM_GAUGE1GT = { default = 0, cast = "number", profile = "gauge1gt", readable = "", section = "fighting", group = "" },
 	SKM_GAUGE1EQ = { default = 0, cast = "number", profile = "gauge1eq", readable = "", section = "fighting", group = "" },
@@ -611,8 +611,9 @@ SkillMgr.Variables = {
 	SKM_GAUGE8GT = { default = 0, cast = "number", profile = "gauge8gt", readable = "", section = "fighting", group = "" },
 	SKM_GAUGE8EQ = { default = 0, cast = "number", profile = "gauge8eq", readable = "", section = "fighting", group = "" },
 	SKM_GAUGE8OR = { default = "", cast = "string", profile = "gauge8or", readable = "", section = "fighting", group = "" },
-	
-	-- Macro Vars.
+	]]
+
+	--[[ Macro Vars.
 	SKM_M1ACTIONTYPE = { default = "Action", cast = "string", profile = "m1actiontype", readable = "", section = "fighting" },
 	SKM_M1ACTIONID = { default = 0, cast = "number", profile = "m1actionid", readable = "", section = "fighting" },
 	SKM_M1ACTIONTARGET = { default = GetString("Target"), cast = "string", profile = "m1actiontarget", readable = "", section = "fighting" },
@@ -752,6 +753,7 @@ SkillMgr.Variables = {
 	SKM_M20ACTIONWAIT = { default = 100, cast = "number", profile = "m20actionwait", readable = "", section = "fighting" },
 	SKM_M20ACTIONMSG = { default = "", cast = "string", profile = "m20actionmsg", readable = "", section = "fighting" },
 	SKM_M20ACTIONCOMPLETE = { default = "", cast = "string", profile = "m20actioncomplete", readable = "", section = "fighting" },
+	]]
 	
 	-- Buff Vars.
 	--SKM_B1TARGET = { default = GetString("Target"), cast = "string", profile = "b1target", readable = "", section = "fighting" },
@@ -849,6 +851,32 @@ SkillMgr.Variables = {
 	SKM_GPNBuff = { default = "", cast = "string", profile = "gpnbuff", readable = "", section = "gathering"},
 	SKM_PSkillIDG = { default = "", cast = "string", profile = "pskillg", readable = "", section = "gathering"},
 }
+
+-- Extend SkillMgr.Variables with SKM_GAUGE1-13 and SKM_GAUGETEST1-13 entries
+for i = 1, 13 do
+    -- SKM_GAUGE entries
+    SkillMgr.Variables["SKM_GAUGE"..i.."LT"] = { default = 0, cast = "number", profile = "gauge"..i.."lt", readable = "", section = "fighting", group = "" }
+    SkillMgr.Variables["SKM_GAUGE"..i.."GT"] = { default = 0, cast = "number", profile = "gauge"..i.."gt", readable = "", section = "fighting", group = "" }
+    SkillMgr.Variables["SKM_GAUGE"..i.."EQ"] = { default = 0, cast = "number", profile = "gauge"..i.."eq", readable = "", section = "fighting", group = "" }
+    SkillMgr.Variables["SKM_GAUGE"..i.."OR"] = { default = "", cast = "string", profile = "gauge"..i.."or", readable = "", section = "fighting", group = "" }
+
+    -- SKM_GAUGETEST entries
+    SkillMgr.Variables["SKM_GAUGETEST"..i.."LT"] = { default = 0, cast = "number", profile = "gaugetest"..i.."lt", readable = "", section = "fighting", group = "" }
+    SkillMgr.Variables["SKM_GAUGETEST"..i.."GT"] = { default = 0, cast = "number", profile = "gaugetest"..i.."gt", readable = "", section = "fighting", group = "" }
+    SkillMgr.Variables["SKM_GAUGETEST"..i.."EQ"] = { default = 0, cast = "number", profile = "gaugetest"..i.."eq", readable = "", section = "fighting", group = "" }
+    SkillMgr.Variables["SKM_GAUGETEST"..i.."OR"] = { default = "", cast = "string", profile = "gaugetest"..i.."or", readable = "", section = "fighting", group = "" }
+end
+
+-- Add SKM_MxACTION* macro variables to SkillMgr.Variables for x = 1 to 20
+for i = 1, 20 do
+    SkillMgr.Variables["SKM_M"..i.."ACTIONTYPE"] = { default = "Action", cast = "string", profile = "m"..i.."actiontype", readable = "", section = "fighting" }
+    SkillMgr.Variables["SKM_M"..i.."ACTIONID"] = { default = 0, cast = "number", profile = "m"..i.."actionid", readable = "", section = "fighting" }
+    SkillMgr.Variables["SKM_M"..i.."ACTIONTARGET"] = { default = GetString("Target"), cast = "string", profile = "m"..i.."actiontarget", readable = "", section = "fighting" }
+    SkillMgr.Variables["SKM_M"..i.."ACTIONWAIT"] = { default = 100, cast = "number", profile = "m"..i.."actionwait", readable = "", section = "fighting" }
+    SkillMgr.Variables["SKM_M"..i.."ACTIONMSG"] = { default = "", cast = "string", profile = "m"..i.."actionmsg", readable = "", section = "fighting" }
+    SkillMgr.Variables["SKM_M"..i.."ACTIONCOMPLETE"] = { default = "", cast = "string", profile = "m"..i.."actioncomplete", readable = "", section = "fighting" }
+end
+
 
 SkillMgr.UpdateDefaultProfiles()
 
@@ -1007,7 +1035,7 @@ function SkillMgr.ModuleInit()
 	gSMTargets = { GetString("Target"),GetString("Ground Target"),GetString("Player"),GetString("Cast Target"),GetString("Party"),GetString("PartyS"),GetString("Low TP"),GetString("Low MP"),GetString("Pet"),GetString("Ally"),GetString("Tank"),GetString("Tankable Target"),GetString("Tanked Target"),GetString("Heal Priority"),GetString("Dead Ally"),GetString("Dead Party") }
 	gSMTarget = 1
 	
-	gSMTargetTypes = { GetString("Any"),GetString("Tank"),GetString("DPS"),GetString("Caster"),GetString("Healer"),GetString("RangeDPS"),GetString("MeleeDPS") }
+	gSMTargetTypes = { GetString("Any"),GetString("Tank"),GetString("DPS"),GetString("Caster"),GetString("Healer"),GetString("RangeDPS"),GetString("MeleeDPS"),GetString("MagicalRangedDPS"),GetString("PhysicalRangedDPS") }
 	gSMTargetType = 1
 	
 	gSMPlayerTargets = { GetString("Any"),GetString("Enemy"),GetString("Player") }
@@ -5642,7 +5670,7 @@ function SkillMgr.AddDefaultConditions()
 			if not skill.trgtype ~= roleString then 
 				found = false
 			end
-			if skill.trgtype == GetString("Caster") and IsCaster(target.job) then
+			if IsJobRole(target.job, skill.trgtype) then
 				found = true
 			end
 			if not found then 
@@ -5899,36 +5927,43 @@ function SkillMgr.AddDefaultConditions()
 		local target = SkillMgr.CurrentTarget
 		local TID = SkillMgr.CurrentTID
 		
-		if (realskilldata.casttime == 0) then
+		if realskilldata.casttime == 0 and target then
 			TID = target.id
 		end
 		
 		local tacount = tonumber(skill.tacount) or 0
 		local tarange = tonumber(skill.tarange) or 5
-		
-		local plistAE = nil
-		if (skill.tacount > 0) then
-			plistAE = EntityList("alive,myparty,maxdistance="..tostring(tarange)..",distanceto="..tostring(TID))
-			if (TableSize(plistAE) < tacount) then 
-				return true 
+		local tahpl = tonumber(skill.tahpl) or 0
+
+		-- Combine party and trust entities into one table
+		local plistAE = {}
+		if tacount > 0 or tahpl > 0 then
+			local party = EntityList("alive,myparty,maxdistance="..tarange..",distanceto="..TID)
+			local trust = EntityList("alive,chartype=9,maxdistance="..tarange..",distanceto="..TID)
+			if table.valid(party) then
+				for k, v in pairs(party) do plistAE[k] = v end
+			end
+			if table.valid(trust) then
+				for k, v in pairs(trust) do plistAE[k] = v end
 			end
 		end
-		
-		local tahpl = tonumber(skill.tahpl) or 0
-		if (tahpl > 0) then
+
+		if tacount > 0 and TableSize(plistAE) < tacount then
+			return true
+		end
+
+		if tahpl > 0 then
 			local count = 0
-			if (table.valid(plistAE)) then
-				for id, entity in pairs(plistAE) do
-					if (entity.alive and entity.targetable and (entity.hp.percent < tahpl)) then
-						count = count + 1
-					end
+			for _, entity in pairs(plistAE) do
+				if entity.alive and entity.targetable and entity.hp and entity.hp.percent < tahpl then
+					count = count + 1
 				end
 			end
-			
-			if count < tacount then 
-				return true 
-			end		
+			if count < tacount then
+				return true
+			end
 		end
+
 		return false
 	end
 	}
@@ -5997,6 +6032,64 @@ function SkillMgr.AddDefaultConditions()
 					if (skill["gauge"..tostring(i).."or"] ~= "") then
 						local foundVal = false
 						for val in StringSplit(skill["gauge"..tostring(i).."or"],",") do
+							if (tonumber(val) == g[i]) then
+								foundVal = true
+								break
+							end
+						end					
+						if (not foundVal) then
+							return true
+						end
+					end		
+				end
+			end
+		end
+		
+		return false
+	end
+	}
+	SkillMgr.AddConditional(conditional)
+	
+	conditional = { name = "Gaugetest Checks"	
+	, eval = function()	
+		local skill = SkillMgr.CurrentSkill
+		
+		for i = 1,13 do
+			local g = Player.gaugetest
+			
+			if (table.valid(g) and g[i] ~= nil and tonumber(g[i]) ~= nil) then
+				if (skill["gaugetest"..tostring(1).."or"] == "gaugetest") or (skill["gaugetest"..tostring(2).."or"] == "gaugetest") then
+					if (skill["gaugetest"..tostring(1).."or"] == "gaugetest") then
+						if (g[1] > g[2]) then
+							--d(tostring(skill.name).." returned false because... Gauge 1 ["..tostring(g[1]).."] > Gauge 2 ["..tostring(g[2]).."]")
+							return true
+						end
+					end
+					if (skill["gaugetest"..tostring(2).."or"] == "Gauge") then
+						if (g[2] > g[1]) then
+							--d(tostring(skill.name).." returned false because... Gauge 2 ["..tostring(g[2]).."] > Gauge 1 ["..tostring(g[1]).."]")
+							return true
+						end
+					end	
+				else
+					if (skill["gaugetest"..tostring(i).."lt"] ~= 0) then
+						if (g[i] > skill["gaugetest"..tostring(i).."lt"]) then
+							return true
+						end
+					end	
+					if (skill["gaugetest"..tostring(i).."gt"] ~= 0) then
+						if (g[i] < skill["gaugetest"..tostring(i).."gt"]) then
+							return true
+						end
+					end		
+					if (skill["gaugetest"..tostring(i).."eq"] ~= 0) then
+						if (g[i] ~= skill["gaugetest"..tostring(i).."eq"]) then
+							return true
+						end
+					end		
+					if (skill["gaugetest"..tostring(i).."or"] ~= "") then
+						local foundVal = false
+						for val in StringSplit(skill["gaugetest"..tostring(i).."or"],",") do
 							if (tonumber(val) == g[i]) then
 								foundVal = true
 								break
@@ -6169,19 +6262,22 @@ function SkillMgr.DrawSkillEditor(prio)
 				
 				-- Check which type of conditionals to show.
 				local fighting, gathering, crafting = false, false, false
-				local classes = {"GLD","PLD","PUG","MNK","MRD","WAR","LNC","DRG","ARC","BRD","CNJ","WHM","THM","BLM","ACN","SMN","SCH","ROG","NIN","DRK","MCH","AST","SAM","RDM","BLU","GNB","DNC","RPR","SGE","VPR","PCT",
-					"MIN","BTN","FSH","CRP","BSM","ARM","GSM","LTW","WVR","ALC","CUL"}
-				
-				for i,abrev in pairsByKeys(classes) do
+				local classes = {
+					"MIN","BTN","FSH",
+					"CRP","BSM","ARM","GSM","LTW","WVR","ALC","CUL",
+					"GLD","PLD","PUG","MNK","MRD","WAR","LNC","DRG","ARC","BRD","CNJ","WHM","THM","BLM","ACN","SMN","SCH","ROG","NIN","DRK","MCH","AST","SAM","RDM","BLU","GNB","DNC","RPR","SGE","VPR","PCT",
+				}
+
+				for i, abrev in ipairs(classes) do
 					if (_G["gSkillProfileValid"..abrev] == true) then
-						if (i <= 29) then
-							fighting = true
-							break
-						elseif (i >= 30 and i <= 32) then
+						if (i >= 1 and i <= 3) then
 							gathering = true
 							break
-						elseif (i >= 33 and i <= 40) then
+						elseif (i >= 4 and i <= 11) then
 							crafting = true
+							break
+						elseif (i > 11) then
+							fighting = true
 							break
 						end
 					end
@@ -6540,12 +6636,31 @@ function SkillMgr.DrawBattleEditor()
 		GUI:Columns(2,"#battle-gauges-main",false)
 		GUI:SetColumnOffset(1,150); GUI:SetColumnOffset(2,450);
 		
-		for i = 1,8 do
+		for i = 1,#Player.gauge do
 			GUI:Text(GetString("Gauge Indicator "..tostring(i))); GUI:NextColumn(); GUI:NextColumn();
 			GUI:Text(GetString("Value <=")); GUI:NextColumn(); SkillMgr.CaptureElement(GUI:InputInt("##SKM_GAUGE"..tostring(i).."LT",_G["SKM_GAUGE"..tostring(i).."LT"],0,0),"SKM_GAUGE"..tostring(i).."LT"); GUI:NextColumn();
 			GUI:Text(GetString("Value >=")); GUI:NextColumn(); SkillMgr.CaptureElement(GUI:InputInt("##SKM_GAUGE"..tostring(i).."GT",_G["SKM_GAUGE"..tostring(i).."GT"],0,0),"SKM_GAUGE"..tostring(i).."GT"); GUI:NextColumn();
 			GUI:Text(GetString("Value =")); GUI:NextColumn(); SkillMgr.CaptureElement(GUI:InputInt("##SKM_GAUGE"..tostring(i).."EQ",_G["SKM_GAUGE"..tostring(i).."EQ"],0,0),"SKM_GAUGE"..tostring(i).."EQ"); GUI:NextColumn();
 			GUI:Text(GetString("Value In")); GUI:NextColumn(); SkillMgr.CaptureElement(GUI:InputText("##SKM_GAUGE"..tostring(i).."OR",_G["SKM_GAUGE"..tostring(i).."OR"]),"SKM_GAUGE"..tostring(i).."OR"); 
+			if (GUI:IsItemHovered()) then
+				GUI:SetTooltip(GetString("Ex: [0,16,32,48] if the value needs to be 0 or 16 or 32 or 48 (do not include brackets)."))
+			end
+			GUI:NextColumn();	
+		end
+			
+		GUI:Columns(1)
+	end
+	
+	if (GUI:CollapsingHeader(GetString("Test Gauges"),"battle-gauges-header")) then
+		GUI:Columns(2,"#battle-gauges-main",false)
+		GUI:SetColumnOffset(1,150); GUI:SetColumnOffset(2,450);
+		
+		for i = 1,#Player.gaugetest do
+			GUI:Text(GetString("Gauge Indicator "..tostring(i))); GUI:NextColumn(); GUI:NextColumn();
+			GUI:Text(GetString("Value <=")); GUI:NextColumn(); SkillMgr.CaptureElement(GUI:InputInt("##SKM_GAUGETEST"..tostring(i).."LT",_G["SKM_GAUGETEST"..tostring(i).."LT"],0,0),"SKM_GAUGETEST"..tostring(i).."LT"); GUI:NextColumn();
+			GUI:Text(GetString("Value >=")); GUI:NextColumn(); SkillMgr.CaptureElement(GUI:InputInt("##SKM_GAUGETEST"..tostring(i).."GT",_G["SKM_GAUGETEST"..tostring(i).."GT"],0,0),"SKM_GAUGETEST"..tostring(i).."GT"); GUI:NextColumn();
+			GUI:Text(GetString("Value =")); GUI:NextColumn(); SkillMgr.CaptureElement(GUI:InputInt("##SKM_GAUGETEST"..tostring(i).."EQ",_G["SKM_GAUGETEST"..tostring(i).."EQ"],0,0),"SKM_GAUGETEST"..tostring(i).."EQ"); GUI:NextColumn();
+			GUI:Text(GetString("Value In")); GUI:NextColumn(); SkillMgr.CaptureElement(GUI:InputText("##SKM_GAUGETEST"..tostring(i).."OR",_G["SKM_GAUGETEST"..tostring(i).."OR"]),"SKM_GAUGETEST"..tostring(i).."OR"); 
 			if (GUI:IsItemHovered()) then
 				GUI:SetTooltip(GetString("Ex: [0,16,32,48] if the value needs to be 0 or 16 or 32 or 48 (do not include brackets)."))
 			end
@@ -6883,7 +6998,7 @@ function SkillMgr.DrawManager()
 							if ( GUI:Button(tostring(prio)..": "..alias.." ["..tostring(skill.id).."]",250,20)) then
 								--if (SkillMgr.EditingSkill ~= prio) then
 									local classCheck = false
-									local classes = {"GLD","PLD","PUG","MNK","MRD","WAR","LNC","DRG","ARC","BRD","CNJ","WHM","THM","BLM","ACN","SMN","SCH","ROG","NIN","DRK","MCH","AST","SAM","RDM","BLU","GNB","DNC","RPR","SGE",
+									local classes = {"GLD","PLD","PUG","MNK","MRD","WAR","LNC","DRG","ARC","BRD","CNJ","WHM","THM","BLM","ACN","SMN","SCH","ROG","NIN","DRK","MCH","AST","SAM","RDM","BLU","GNB","DNC","RPR","SGE","VPR","PCT",
 										"MIN","BTN","FSH","CRP","BSM","ARM","GSM","LTW","WVR","ALC","CUL"}
 									
 									for i,abrev in pairsByKeys(classes) do
