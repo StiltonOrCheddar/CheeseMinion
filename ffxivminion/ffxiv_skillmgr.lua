@@ -1035,7 +1035,7 @@ function SkillMgr.ModuleInit()
 	gSMTargets = { GetString("Target"),GetString("Ground Target"),GetString("Player"),GetString("Cast Target"),GetString("Party"),GetString("PartyS"),GetString("Low TP"),GetString("Low MP"),GetString("Pet"),GetString("Ally"),GetString("Tank"),GetString("Tankable Target"),GetString("Tanked Target"),GetString("Heal Priority"),GetString("Dead Ally"),GetString("Dead Party") }
 	gSMTarget = 1
 	
-	gSMTargetTypes = { GetString("Any"),GetString("Tank"),GetString("DPS"),GetString("Caster"),GetString("Healer"),GetString("RangeDPS"),GetString("MeleeDPS"),GetString("MagicalRangedDPS"),GetString("PhysicalRangedDPS") }
+	gSMTargetTypes = { GetString("Any"),GetString("Tank"),GetString("DPS"),GetString("Caster"),GetString("Healer"),GetString("Range DPS"),GetString("Melee DPS"),GetString("Magical Ranged DPS"),GetString("Physical Ranged DPS") }
 	gSMTargetType = 1
 	
 	gSMPlayerTargets = { GetString("Any"),GetString("Enemy"),GetString("Player") }
