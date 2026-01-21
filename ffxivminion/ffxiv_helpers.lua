@@ -42,7 +42,7 @@ function GetBestPhaennaMesh(version)
 	if not tonumber(version) then
 		return "Phaenna"
 	end
-	
+
 	local bestMesh = ""
 	local pathName = GetStartupPath()..[[\Navigation\]]
 	for i = 1, 20, 1 do
@@ -53,12 +53,10 @@ function GetBestPhaennaMesh(version)
 			end
 		end
 	end 
-	
+
 	if bestMesh ~= "" then
-		d("return bestMesh mesh")
 		return bestMesh
 	else
-		d("return fallback mesh")
 		return "Phaenna"
 	end
 end
@@ -878,33 +876,31 @@ function IsValidHealTarget(e)
 	
 	return false
 end
-function GetBestTankHealTarget( range )
+function GetBestTankHealTarget(range)
 	range = range or ml_global_information.AttackRange
 	local lowest = nil
 	local lowestHP = 101
-
-    local el = MEntityList("friendly,alive,chartype=4,myparty,targetable,maxdistance="..tostring(range))
-	--local el = MEntityList("friendly,alive,chartype=4,myparty,maxdistance="..tostring(range))
-    if ( table.valid(el) ) then
-		for i,entity in pairs(el) do
-			if (IsTank(entity.job) and entity.hp.percent < lowestHP ) then
-				lowest = entity
-				lowestHP = entity.hp.percent
-			end
-        end
-    end
 	
-	local trust = MEntityList("alive,chartype=9,targetable,maxdistance="..tostring(range))
-	--local el = MEntityList("friendly,alive,chartype=4,myparty,maxdistance="..tostring(range))
-    if ( table.valid(trust) ) then
-		for i,entity in pairs(trust) do
-			if (IsTank(entity.job) and entity.hp.percent < lowestHP ) then
-				lowest = entity
-				lowestHP = entity.hp.percent
+	-- Search party members
+	local pl = MEntityList("friendly,alive,chartype=4,myparty,targetable,maxdistance="..tostring(range))
+	-- Search trust NPCs
+	local tl = MEntityList("alive,chartype=9,targetable,maxdistance="..tostring(range))
+	
+	-- Helper to check and update lowest tank target
+	local function check_entities(entity_list)
+		if table.valid(entity_list) then
+			for i,entity in pairs(entity_list) do
+				if IsTank(entity.job) and entity.hp.percent < lowestHP then
+					lowest = entity
+					lowestHP = entity.hp.percent
+				end
 			end
-        end
-    end
-
+		end
+	end
+	
+	check_entities(pl)
+	check_entities(tl)
+	
 	local ptrg = MGetTarget()
 	if (ptrg and Player.pet) then
 		if (lowest == nil and ptrg.targetid == Player.pet.id) then
@@ -914,68 +910,85 @@ function GetBestTankHealTarget( range )
 	
 	return lowest
 end
-function GetBestPartyHealTarget( npc, range, hp, whitelist )	
-	local npc = npc
-	if (npc == nil) then npc = false end
-	local range = range or ml_global_information.AttackRange
-	local hp = hp or 95
-	local whitelist = IsNull(whitelist,"")
-	
-	local search = ""
-	local healables = {}
-	
-	search = "alive,friendly,chartype=4,myparty,targetable,maxdistance="..tostring(range)
-	if (whitelist ~= "") then search = search .. ",contentid=" .. tostring(whitelist) end
-	
-	local el = MEntityList(search)	
-	if ( table.valid(el) ) then
-		for i,entity in pairs(el) do
-			if (IsValidHealTarget(entity) and entity.hp.percent <= hp) then
-				healables[i] = entity
-			end
-		end
-	end
-	
-	if (npc) then
-		search = "alive,targetable,maxdistance="..tostring(range)
-		if (whitelist ~= "") then search = search .. ",contentid=" .. tostring(whitelist)  end
-	
-		el = MEntityList(search)
-		if ( table.valid(el) ) then
-			for i,entity in pairs(el) do
-				if (IsValidHealTarget(entity) and entity.hp.percent <= hp) then
-					healables[i] = entity
-				end
-			end
-		end
-	end
-	
-	if (table.valid(healables)) then
-		local lowest = nil
-		local lowesthp = 100
-		
-		for i,entity in pairs(healables) do
-			if (not lowest or (lowest and entity.hp.percent < lowesthp)) then
-				lowest = entity
-				lowesthp = entity.hp.percent
-			end
-		end
-		
-		if (lowest) then
-			return lowest
-		end
-	end
-	
-	if (gBotMode == GetString("partyMode") and not IsPartyLeader()) then
-		local leader, isEntity = GetPartyLeader()
-		if (leader and leader.id ~= 0) then
-			local leaderentity = EntityList:Get(leader.id)
-			if (leaderentity and leaderentity.distance <= range and leaderentity.hp.percent <= hp) then
-				return leaderentity
-			end
-		end
-	end
-	
+function GetBestPartyHealTarget(npc, range, hp, whitelist)
+    npc = npc or false
+    range = range or ml_global_information.AttackRange
+    hp = hp or 95
+    whitelist = IsNull(whitelist,"")
+    
+    local healables = {}
+    local seen_ids = {}
+
+    -- Always check party members (chartype=4, myparty)
+    local pl_search = "alive,friendly,chartype=4,myparty,targetable,maxdistance="..tostring(range)
+    if whitelist ~= "" then pl_search = pl_search .. ",contentid=" .. tostring(whitelist) end
+    local pl = MEntityList(pl_search)
+    if table.valid(pl) then
+        for i, entity in pairs(pl) do
+            local id = entity.id or entity.ID
+            if IsValidHealTarget(entity) and entity.hp.percent <= hp and not seen_ids[id] then
+                healables[id] = entity
+                seen_ids[id] = true
+            end
+        end
+    end
+
+    -- Always check trusts (chartype=9)
+    local tl_search = "alive,targetable,chartype=9,maxdistance="..tostring(range)
+    if whitelist ~= "" then tl_search = tl_search .. ",contentid=" .. tostring(whitelist) end
+    local tl = MEntityList(tl_search)
+    if table.valid(tl) then
+        for i, entity in pairs(tl) do
+            local id = entity.id or entity.ID
+            if IsValidHealTarget(entity) and entity.hp.percent <= hp and not seen_ids[id] then
+                healables[id] = entity
+                seen_ids[id] = true
+            end
+        end
+    end
+
+    -- If npc is true, include all (other) NPCs as well
+    if npc then
+        local npc_search = "alive,targetable,maxdistance="..tostring(range)
+        if whitelist ~= "" then npc_search = npc_search .. ",contentid=" .. tostring(whitelist) end
+        local el = MEntityList(npc_search)
+        if table.valid(el) then
+            for i, entity in pairs(el) do
+                local id = entity.id or entity.ID
+                if IsValidHealTarget(entity) and entity.hp.percent <= hp and not seen_ids[id] then
+                    healables[id] = entity
+                    seen_ids[id] = true
+                end
+            end
+        end
+    end
+
+    if table.valid(healables) then
+        local lowest = nil
+        local lowesthp = 100
+
+        for id, entity in pairs(healables) do
+            if not lowest or (lowest and entity.hp.percent < lowesthp) then
+                lowest = entity
+                lowesthp = entity.hp.percent
+            end
+        end
+
+        if lowest then
+            return lowest
+        end
+    end
+
+    if (gBotMode == GetString("partyMode") and not IsPartyLeader()) then
+        local leader, isEntity = GetPartyLeader()
+        if (leader and leader.id ~= 0) then
+            local leaderentity = EntityList:Get(leader.id)
+            if (leaderentity and leaderentity.distance <= range and leaderentity.hp.percent <= hp) then
+                return leaderentity
+            end
+        end
+    end
+
     return nil
 end
 function GetPetSkillRangeRadius(id)
@@ -1031,55 +1044,85 @@ function GetPetSkillRangeRadius(id)
 	
 	return nil
 end
-function GetLowestHPParty( skill )
-    npc = (skill.npc )
-	range = skill.range or ml_global_information.AttackRange
-	count = skill.ptcount or 0
-	minHP = skill.pthpb or 0
-	
-	local lowest = nil
-	local lowestHP = 101
-	local el = nil
-	local memCount = 0
-	
-	if (count ~= 0 and minHP > 0) then
-		local party = EntityList.myparty
-		for i, member in pairs(party) do
-			if (((not npc and member.type == 1) or npc) and	member.id ~= 0 and member.targetable and member.distance <= range and member.hp.percent <= minHP) then
-				memCount = memCount + 1
-			end
-			if (memCount >= skill.ptcount) then
-				return true
-			end
-		end
-		return false
-	else
-		if (not npc) then
-			el = MEntityList("myparty,alive,type=1,targetable,maxdistance="..tostring(range))
-			--el = MEntityList("myparty,alive,type=1,maxdistance="..tostring(range))
-		else
-			el = MEntityList("myparty,alive,targetable,maxdistance="..tostring(range))
-			--el = MEntityList("myparty,alive,maxdistance="..tostring(range))
-		end
-		
-		if ( table.valid(el) ) then
-			for i,entity in pairs(el) do
-				if (IsValidHealTarget(entity)) then
-					if (not lowest or entity.hp.percent < lowestHP) then
-						lowest = entity
-						lowestHP = entity.hp.percent
-					end
-				end
-			end
-		end
-		
-		if (Player.alive and Player.hp.percent < lowestHP) then
-			lowest = Player
-			lowestHP = Player.hp.percent
-		end
-		
-		return lowest
-	end
+
+function GetLowestHPParty(skill)
+    -- Set up skill parameters
+    local npc = skill.npc
+    local range = skill.range or ml_global_information.AttackRange
+    local count = skill.ptcount or 0
+    local minHP = skill.pthpb or 0
+
+    -- To store eligible heal targets and avoid duplicates
+    local healables = {}
+    local seen_ids = {}
+
+    -- Always include party members (chartype=4, myparty)
+    local pl = MEntityList("myparty,alive,targetable,chartype=4,maxdistance=" .. tostring(range))
+    if table.valid(pl) then
+        for _, entity in pairs(pl) do
+            local id = entity.id or entity.ID
+            if IsValidHealTarget(entity) and not seen_ids[id] then
+                healables[#healables+1] = entity
+                seen_ids[id] = true
+            end
+        end
+    end
+
+    -- Always include Trusts (chartype=9)
+    local tl = MEntityList("alive,targetable,chartype=9,maxdistance=" .. tostring(range))
+    if table.valid(tl) then
+        for _, entity in pairs(tl) do
+            local id = entity.id or entity.ID
+            if IsValidHealTarget(entity) and not seen_ids[id] then
+                healables[#healables+1] = entity
+                seen_ids[id] = true
+            end
+        end
+    end
+
+    -- Optionally include all other NPCs, if skill.npc is true
+    if npc then
+        local el = MEntityList("alive,targetable,maxdistance=" .. tostring(range))
+        if table.valid(el) then
+            for _, entity in pairs(el) do
+                local id = entity.id or entity.ID
+                if IsValidHealTarget(entity) and not seen_ids[id] then
+                    healables[#healables+1] = entity
+                    seen_ids[id] = true
+                end
+            end
+        end
+    end
+
+    -- Optionally include self (always at the end to avoid duplicate check)
+    if Player and Player.alive and not seen_ids[Player.id or Player.ID] then
+        healables[#healables+1] = Player
+    end
+
+    -- ptcount logic: "Return true if at least {count} healables have HP <= minHP"
+    if count ~= 0 and minHP > 0 then
+        local memCount = 0
+        for _, entity in ipairs(healables) do
+            if entity.hp.percent <= minHP then
+                memCount = memCount + 1
+                if memCount >= count then
+                    return true
+                end
+            end
+        end
+        return false
+    else
+        -- Find the lowest HP entity among eligible targets
+        local lowest = nil
+        local lowestHP = 101
+        for _, entity in ipairs(healables) do
+            if entity.hp and entity.hp.percent and (not lowest or entity.hp.percent < lowestHP) then
+                lowest = entity
+                lowestHP = entity.hp.percent
+            end
+        end
+        return lowest
+    end
 end
 
 function GetLowestMPParty( range, role, includeself )
@@ -1193,127 +1236,71 @@ function GetLowestTPParty( range, role, includeself )
 	
     return lowest
 end
-function GetBestHealTarget( npc, range, reqhp )
-	local npc = npc
-	if (npc == nil) then npc = false end
-	local range = range or ml_global_information.AttackRange
-	local reqhp = tonumber(reqhp) or 95
-	
-	--d("[GetBestHealTarget]: Params:"..tostring(npc)..","..tostring(range)..","..tostring(reqhp))
-	
-	local healables = {}
-	
-	local el = MEntityList("alive,friendly,chartype=4,targetable,maxdistance="..tostring(range))
-	if ( table.valid(el) ) then
-		for i,entity in pairs(el) do
-			if (IsValidHealTarget(entity) and entity.hp.percent <= reqhp) then
-				--d("[GetBestHealTarget]: "..tostring(entity.name).." is a valid target with ["..tostring(entity.hp.percent).."] HP %.")
-				healables[i] = entity
-			end
-		end
-	end
-	
-	if (npc) then
-		--d("[GetBestHealTarget]: Checking non-players section.")
-		local el = MEntityList("alive,targetable,maxdistance="..tostring(range))
-		if ( table.valid(el) ) then
-			for i,entity in pairs(el) do
-				if (IsValidHealTarget(entity) and entity.hp.percent <= reqhp) then
-					--d("[GetBestHealTarget]: "..tostring(entity.name).." is a valid target with ["..tostring(entity.hp.percent).."] HP %.")
-					healables[i] = entity
-				end
-			end
-		end
-	end
-	
-	if (table.valid(healables)) then
-		local lowest = nil
-		local lowesthp = 100
-		
-		for i,e in pairs(healables) do
-			if (not lowest or (lowest and e.hp.percent < lowesthp)) then
-				lowest = e
-				lowesthp = e.hp.percent
-				--d("[GetBestHealTarget]: "..tostring(e.name).." is the lowest target with ["..tostring(e.hp.percent).."] HP %.")
-			end
-		end
-		
-		if (lowest) then
-			return lowest
-		end
-	end
-   
-    ml_debug("GetBestHealTarget() failed with no entity found matching params")
-    return nil
-end
-function GetBestHealTarget_Extended(opts, range, reqhp)
-    -- opts: table with boolean fields: party, trust, npc, player
-    opts = opts or {party=true, trust=false, npc=false}
+function GetBestHealTarget(npc, range, reqhp)
+    npc = npc or false
     range = range or ml_global_information.AttackRange
     reqhp = tonumber(reqhp) or 95
 
     local healables = {}
+    local seen_ids = {}
 
-    -- Party (chartype=4)
-    if opts.party then
-        local el = MEntityList("alive,friendly,chartype=4,targetable,maxdistance="..tostring(range))
-        if table.valid(el) then
-            for _, entity in pairs(el) do
-                if IsValidHealTarget(entity) and entity.hp.percent <= reqhp then
-                    table.insert(healables, entity)
-                end
+    -- Party members (chartype=4)
+    local pl = MEntityList("alive,friendly,chartype=4,targetable,maxdistance="..tostring(range))
+    if table.valid(pl) then
+        for _, entity in pairs(pl) do
+            local id = entity.id or entity.ID
+            if IsValidHealTarget(entity) and entity.hp.percent <= reqhp and not seen_ids[id] then
+                healables[id] = entity
+                seen_ids[id] = true
             end
         end
     end
 
-    -- Trust (chartype=9)
-    if opts.trust then
-        local el = MEntityList("alive,chartype=9,targetable,maxdistance="..tostring(range))
-        if table.valid(el) then
-            for _, entity in pairs(el) do
-                if IsValidHealTarget(entity) and entity.hp.percent <= reqhp then
-                    table.insert(healables, entity)
-                end
+    -- Trusts (chartype=9)
+    local tl = MEntityList("alive,targetable,chartype=9,maxdistance="..tostring(range))
+    if table.valid(tl) then
+        for _, entity in pairs(tl) do
+            local id = entity.id or entity.ID
+            if IsValidHealTarget(entity) and entity.hp.percent <= reqhp and not seen_ids[id] then
+                healables[id] = entity
+                seen_ids[id] = true
             end
         end
     end
 
-    -- NPC (all targetable, not filtered by chartype)
-    if opts.npc then
+    -- Other NPCs, only if npc == true
+    if npc then
         local el = MEntityList("alive,targetable,maxdistance="..tostring(range))
         if table.valid(el) then
             for _, entity in pairs(el) do
-                if IsValidHealTarget(entity) and entity.hp.percent <= reqhp then
-                    table.insert(healables, entity)
+                local id = entity.id or entity.ID
+                if IsValidHealTarget(entity) and entity.hp.percent <= reqhp and not seen_ids[id] then
+                    healables[id] = entity
+                    seen_ids[id] = true
                 end
             end
         end
     end
 
-    -- Find the entity with the lowest HP%
     if table.valid(healables) then
         local lowest = nil
         local lowesthp = 100
+
         for _, e in pairs(healables) do
-            if not lowest or e.hp.percent < lowesthp then
+            if not lowest or (e.hp.percent < lowesthp) then
                 lowest = e
                 lowesthp = e.hp.percent
             end
         end
+
         if lowest then
             return lowest
         end
     end
 
-    ml_debug("GetBestHealTarget_Extended() failed with no entity found matching params")
+    ml_debug("GetBestHealTarget() failed with no entity found matching params")
     return nil
 end
-
---[[
-Usage Example:
-local target = GetBestHealTarget_Extended({party=true, trust=true, npc=true, player=true}, 30, 80)
--- This will check all four categories within 30 units and HP% <= 80
-]]
 function GetBestBaneTarget()
 	local bestTarget = nil
 	local party = EntityList.myparty
@@ -1397,63 +1384,81 @@ function GetClosestHealTarget()
     --ml_debug("GetBestHealTarget() failed with no entity found matching params")
     return nil
 end
-function GetBestRevive( party, role)
-	party = IsNull(party,false)
-	role = role or ""
-	range = 30
-	
-	local el = nil
-	if (party) then
-		el = MEntityList("myparty,friendly,chartype=4,targtable,dead,maxdistance="..tostring(range))
-	else
-		el = MEntityList("friendly,dead,chartype=4,targetable,maxdistance="..tostring(range))
-	end 
-	
-	-- Filter out the inappropriate roles.
-	local targets = {}
-	if (table.valid(el)) then
-		local roleTable = GetRoleTable(role)
-		if (roleTable) then
-			for id,entity in pairs(el) do
-				if (entity.job and roleTable[entity.job]) then
-					targets[id] = entity
-				end
-			end
-		else
-			for id,entity in pairs(el) do
-				targets[id] = entity
-			end
-		end
-	end
-	
-	-- Filter out targets with the res buff.
-	if (targets) then
-		for id,entity in pairs(targets) do
-			if (HasBuffs(entity,"148")) then
-				targets[id] = nil
-			end
-		end
-	end
-	
-	if (targets) then
-		for id,entity in pairs(targets) do
-			if (entity) then
-				return entity
-			end
-		end
-	end
-	
-	if (gBotMode == GetString("partyMode") and not IsPartyLeader()) then
-		local leader, isEntity = GetPartyLeader()
-		if (leader and leader.id ~= 0) then
-			local leaderentity = EntityList:Get(leader.id)
-			if (leaderentity and leaderentity.distance <= range and not leader.alive and MissingBuffs(leaderentity, "148")) then
-				return leaderentity
-			end
-		end
-	end
-	
-	return nil
+function GetBestRevive(party, role)
+    party = IsNull(party, false)
+    role = role or ""
+    local range = 30
+
+    local el = nil
+    local tl = nil
+    if party then
+        el = MEntityList("myparty,friendly,chartype=4,targetable,dead,maxdistance="..tostring(range))
+        tl = MEntityList("chartype=9,targetable,dead,maxdistance="..tostring(range))
+    else
+        el = MEntityList("friendly,dead,chartype=4,targetable,maxdistance="..tostring(range))
+        tl = MEntityList("chartype=9,targetable,dead,maxdistance="..tostring(range))
+    end
+
+    -- Filter by role for both party and trust lists
+    local targets = {}
+
+    local roleTable = GetRoleTable(role)
+    if table.valid(el) then
+        if roleTable then
+            for id, entity in pairs(el) do
+                if entity.job and roleTable[entity.job] then
+                    targets[id] = entity
+                end
+            end
+        else
+            for id, entity in pairs(el) do
+                targets[id] = entity
+            end
+        end
+    end
+    if table.valid(tl) then
+        if roleTable then
+            for id, entity in pairs(tl) do
+                if entity.job and roleTable[entity.job] then
+                    targets[id] = entity
+                end
+            end
+        else
+            for id, entity in pairs(tl) do
+                targets[id] = entity
+            end
+        end
+    end
+
+    -- Filter out entities with the resurrect buff (148)
+    if targets then
+        for id, entity in pairs(targets) do
+            if HasBuffs(entity, "148") then
+                targets[id] = nil
+            end
+        end
+    end
+
+    -- Return the first valid entity
+    if targets then
+        for id, entity in pairs(targets) do
+            if entity then
+                return entity
+            end
+        end
+    end
+
+    if gBotMode == GetString("partyMode") and not IsPartyLeader() then
+        local leader, isEntity = GetPartyLeader()
+        if leader and leader.id ~= 0 then
+            local leaderentity = EntityList:Get(leader.id)
+            if leaderentity and leaderentity.distance <= range and not leader.alive and MissingBuffs(leaderentity, "148") then
+                return leaderentity
+            end
+        end
+    end
+
+    return nil
 end
 function GetPVPTarget()
     local targets = {}
@@ -3707,43 +3712,42 @@ end
 -- Centralized job role and subrole mapping
 local JOB_ROLE_DATA = {
     -- DPS
-    [FFXIV.JOBS.ARCANIST]     = { role = "DPS",      subroles = { "Caster", "RangeDPS", "MagicalRangedDPS" } },
-    [FFXIV.JOBS.ARCHER]       = { role = "DPS",      subroles = { "RangeDPS", "PhysicalRangedDPS" } },
-    [FFXIV.JOBS.BARD]         = { role = "DPS",      subroles = { "RangeDPS", "PhysicalRangedDPS" } },
-    [FFXIV.JOBS.BLACKMAGE]    = { role = "DPS",      subroles = { "Caster", "RangeDPS", "MagicalRangedDPS" } },
-    [FFXIV.JOBS.DANCER]       = { role = "DPS",      subroles = { "RangeDPS", "PhysicalRangedDPS" } },
-    [FFXIV.JOBS.DRAGOON]      = { role = "DPS",      subroles = { "MeleeDPS" } },
-    [FFXIV.JOBS.LANCER]       = { role = "DPS",      subroles = { "MeleeDPS" } },
-    [FFXIV.JOBS.MONK]         = { role = "DPS",      subroles = { "MeleeDPS" } },
-    [FFXIV.JOBS.PUGILIST]     = { role = "DPS",      subroles = { "MeleeDPS" } },
-    [FFXIV.JOBS.SUMMONER]     = { role = "DPS",      subroles = { "Caster", "RangeDPS", "MagicalRangedDPS" } },
-    [FFXIV.JOBS.THAUMATURGE]  = { role = "DPS",      subroles = { "Caster", "RangeDPS", "MagicalRangedDPS" } },
-    [FFXIV.JOBS.ROGUE]        = { role = "DPS",      subroles = { "MeleeDPS" } },
-    [FFXIV.JOBS.NINJA]        = { role = "DPS",      subroles = { "MeleeDPS" } },
-    [FFXIV.JOBS.MACHINIST]    = { role = "DPS",      subroles = { "RangeDPS", "PhysicalRangedDPS" } },
-    [FFXIV.JOBS.SAMURAI]      = { role = "DPS",      subroles = { "MeleeDPS" } },
-    [FFXIV.JOBS.REDMAGE]      = { role = "DPS",      subroles = { "Caster", "RangeDPS", "MagicalRangedDPS" } },
-    [FFXIV.JOBS.BLUEMAGE]     = { role = "DPS",      subroles = { "Caster", "RangeDPS", "MagicalRangedDPS" } },
-    [FFXIV.JOBS.REAPER]       = { role = "DPS",      subroles = { "MeleeDPS" } },
-    [FFXIV.JOBS.VIPER]        = { role = "DPS",      subroles = { "MeleeDPS" } },
-    [FFXIV.JOBS.PICTOMANCER]  = { role = "DPS",      subroles = { "Caster", "RangeDPS", "MagicalRangedDPS" } }, -- adjust as needed
+    [FFXIV.JOBS.ARCANIST]     = { role = GetString("DPS"),      subroles = { GetString("Caster"), GetString("Ranged DPS"), GetString("Magical Ranged DPS") } },
+    [FFXIV.JOBS.ARCHER]       = { role = GetString("DPS"),      subroles = { GetString("Ranged DPS"), GetString("Physical Ranged DPS") } },
+    [FFXIV.JOBS.BARD]         = { role = GetString("DPS"),      subroles = { GetString("Ranged DPS"), GetString("Physical Ranged DPS") } },
+    [FFXIV.JOBS.BLACKMAGE]    = { role = GetString("DPS"),      subroles = { GetString("Caster"), GetString("Ranged DPS"), GetString("Magical Ranged DPS") } },
+    [FFXIV.JOBS.DANCER]       = { role = GetString("DPS"),      subroles = { GetString("Ranged DPS"), GetString("Physical Ranged DPS") } },
+    [FFXIV.JOBS.DRAGOON]      = { role = GetString("DPS"),      subroles = { GetString("Melee DPS") } },
+    [FFXIV.JOBS.LANCER]       = { role = GetString("DPS"),      subroles = { GetString("Melee DPS") } },
+    [FFXIV.JOBS.MONK]         = { role = GetString("DPS"),      subroles = { GetString("Melee DPS") } },
+    [FFXIV.JOBS.PUGILIST]     = { role = GetString("DPS"),      subroles = { GetString("Melee DPS") } },
+    [FFXIV.JOBS.SUMMONER]     = { role = GetString("DPS"),      subroles = { GetString("Caster"), GetString("Ranged DPS"), GetString("Magical Ranged DPS") } },
+    [FFXIV.JOBS.THAUMATURGE]  = { role = GetString("DPS"),      subroles = { GetString("Caster"), GetString("Ranged DPS"), GetString("Magical Ranged DPS") } },
+    [FFXIV.JOBS.ROGUE]        = { role = GetString("DPS"),      subroles = { GetString("Melee DPS") } },
+    [FFXIV.JOBS.NINJA]        = { role = GetString("DPS"),      subroles = { GetString("Melee DPS") } },
+    [FFXIV.JOBS.MACHINIST]    = { role = GetString("DPS"),      subroles = { GetString("Ranged DPS"), GetString("Physical Ranged DPS") } },
+    [FFXIV.JOBS.SAMURAI]      = { role = GetString("DPS"),      subroles = { GetString("Melee DPS") } },
+    [FFXIV.JOBS.REDMAGE]      = { role = GetString("DPS"),      subroles = { GetString("Caster"), GetString("Ranged DPS"), GetString("Magical Ranged DPS") } },
+    [FFXIV.JOBS.BLUEMAGE]     = { role = GetString("DPS"),      subroles = { GetString("Caster"), GetString("Ranged DPS"), GetString("Magical Ranged DPS") } },
+    [FFXIV.JOBS.REAPER]       = { role = GetString("DPS"),      subroles = { GetString("Melee DPS") } },
+    [FFXIV.JOBS.VIPER]        = { role = GetString("DPS"),      subroles = { GetString("Melee DPS") } },
+    [FFXIV.JOBS.PICTOMANCER]  = { role = GetString("DPS"),      subroles = { GetString("Caster"), GetString("Ranged DPS"), GetString("Magical Ranged DPS") } },
 
     -- Healer
-    [FFXIV.JOBS.CONJURER]     = { role = "Healer",   subroles = { "Caster", "Healer" } },
-    [FFXIV.JOBS.SCHOLAR]      = { role = "Healer",   subroles = { "Caster", "Healer" } },
-    [FFXIV.JOBS.WHITEMAGE]    = { role = "Healer",   subroles = { "Caster", "Healer" } },
-    [FFXIV.JOBS.ASTROLOGIAN]  = { role = "Healer",   subroles = { "Caster", "Healer" } },
-    [FFXIV.JOBS.SAGE]         = { role = "Healer",   subroles = { "Caster", "Healer" } },
+    [FFXIV.JOBS.CONJURER]     = { role = GetString("Healer"),   subroles = { GetString("Caster"), GetString("Healer") } },
+    [FFXIV.JOBS.SCHOLAR]      = { role = GetString("Healer"),   subroles = { GetString("Caster"), GetString("Healer") } },
+    [FFXIV.JOBS.WHITEMAGE]    = { role = GetString("Healer"),   subroles = { GetString("Caster"), GetString("Healer") } },
+    [FFXIV.JOBS.ASTROLOGIAN]  = { role = GetString("Healer"),   subroles = { GetString("Caster"), GetString("Healer") } },
+    [FFXIV.JOBS.SAGE]         = { role = GetString("Healer"),   subroles = { GetString("Caster"), GetString("Healer") } },
 
     -- Tank
-    [FFXIV.JOBS.GLADIATOR]    = { role = "Tank",     subroles = { "Tank" } },
-    [FFXIV.JOBS.MARAUDER]     = { role = "Tank",     subroles = { "Tank" } },
-    [FFXIV.JOBS.PALADIN]      = { role = "Tank",     subroles = { "Tank" } },
-    [FFXIV.JOBS.WARRIOR]      = { role = "Tank",     subroles = { "Tank" } },
-    [FFXIV.JOBS.DARKKNIGHT]   = { role = "Tank",     subroles = { "Tank" } },
-    [FFXIV.JOBS.GUNBREAKER]   = { role = "Tank",     subroles = { "Tank" } },
+    [FFXIV.JOBS.GLADIATOR]    = { role = GetString("Tank"),     subroles = { GetString("Tank") } },
+    [FFXIV.JOBS.MARAUDER]     = { role = GetString("Tank"),     subroles = { GetString("Tank") } },
+    [FFXIV.JOBS.PALADIN]      = { role = GetString("Tank"),     subroles = { GetString("Tank") } },
+    [FFXIV.JOBS.WARRIOR]      = { role = GetString("Tank"),     subroles = { GetString("Tank") } },
+    [FFXIV.JOBS.DARKKNIGHT]   = { role = GetString("Tank"),     subroles = { GetString("Tank") } },
+    [FFXIV.JOBS.GUNBREAKER]   = { role = GetString("Tank"),     subroles = { GetString("Tank") } },
 }
-
 -- Returns the localized string for the main role of a jobID
 function GetRoleString(jobID)
     local data = JOB_ROLE_DATA[jobID]
@@ -3752,7 +3756,6 @@ function GetRoleString(jobID)
     end
     return nil
 end
-
 -- Returns a table of jobIDs for a given role or subrole (case-insensitive, supports subroles array)
 function GetRoleTable(rolestring)
     if not rolestring then return nil end
@@ -3772,12 +3775,10 @@ function GetRoleTable(rolestring)
     end
     return next(result) and result or nil
 end
-
 -- Returns a table of jobIDs for any matching role or subrole (case-insensitive)
 function GetJobsByRoleString(rolestring)
     return GetRoleTable(rolestring)
 end
-
 -- Generic function to check if a job matches a given role or subrole (case-insensitive)
 function IsJobRole(var, rolestring)
     local jobid = GetJobID(var)
@@ -3797,7 +3798,6 @@ function IsJobRole(var, rolestring)
     end
     return false
 end
-
 function GetJobID(var)
     var = IsNull(var, Player)
     if type(var) == "table" then
@@ -3807,55 +3807,46 @@ function GetJobID(var)
     end
     return 0
 end
-
 -- Refactored IsX functions to use IsJobRole and support subroles array
-
+function IsDPS(var)
+    return IsJobRole(var, GetString("Ranged DPS")) or IsJobRole(var, GetString("Melee DPS"))
+end
 function IsMeleeDPS(var)
-    return IsJobRole(var, "MeleeDPS")
+    return IsJobRole(var, GetString("Melee DPS"))
 end
-
 function IsRangedDPS(var)
-    return IsJobRole(var, "RangeDPS")
+    return IsJobRole(var, GetString("Ranged DPS"))
 end
-
 function IsPhysicalRangedDPS(var)
-    return IsJobRole(var, "PhysicalRangedDPS")
+    return IsJobRole(var, GetString("Physical Ranged DPS"))
 end
-
 function IsMagicalRangedDPS(var)
-    return IsJobRole(var, "MagicalRangedDPS")
+    return IsJobRole(var, GetString("Magical Ranged DPS"))
 end
-
 function IsRanged(var)
-    -- Ranged: RangeDPS, PhysicalRangedDPS, or MagicalRangedDPS
-    return IsJobRole(var, "RangeDPS") or IsJobRole(var, "PhysicalRangedDPS") or IsJobRole(var, "MagicalRangedDPS")
+    -- Ranged: Range DPS, Physical Ranged DPS, or Magical Ranged DPS
+    return IsJobRole(var, GetString("Ranged DPS")) or IsJobRole(var, GetString("Physical Ranged DPS")) or IsJobRole(var, GetString("Magical Ranged DPS"))
 end
-
 function IsPhysicalDPS(var)
-    -- Physical DPS: MeleeDPS or PhysicalRangedDPS
-    return IsJobRole(var, "MeleeDPS") or IsJobRole(var, "PhysicalRangedDPS")
+    -- Physical DPS: MeleeDPS or Physical Ranged DPS
+    return IsJobRole(var, GetString("Melee DPS")) or IsJobRole(var, GetString("Physical Ranged DPS"))
 end
-
 function IsCasterDPS(var)
-    -- Caster DPS: DPS role and Caster subrole or MagicalRangedDPS
+    -- Caster DPS: DPS role and Caster subrole or Magical Ranged DPS
     local jobid = GetJobID(var)
     local data = JOB_ROLE_DATA[jobid]
-    return (data and data.role == "DPS" and IsJobRole(var, "Caster")) or IsJobRole(var, "MagicalRangedDPS")
+    return (data and data.role == GetString("DPS") and IsJobRole(var, GetString("Caster"))) or IsJobRole(var, GetString("Magical Ranged DPS"))
 end
-
 function IsCaster(var)
-    -- Caster: any job with subrole Caster or MagicalRangedDPS (includes healers)
-    return IsJobRole(var, "Caster") or IsJobRole(var, "MagicalRangedDPS")
+    -- Caster: any job with subrole Caster or Magical Ranged DPS (includes healers)
+    return IsJobRole(var, GetString("Caster")) or IsJobRole(var, GetString("Magical Ranged DPS"))
 end
-
 function IsHealer(var)
-    return IsJobRole(var, "Healer")
+    return IsJobRole(var, GetString("Healer"))
 end
-
 function IsTank(var)
-    return IsJobRole(var, "Tank")
+    return IsJobRole(var, GetString("Tank"))
 end
-
 function IsGatherer(jobID)
 	local jobID = tonumber(jobID)
 	if jobID ~= nil and (jobID >= 16 and jobID <= 17) then
@@ -3885,71 +3876,109 @@ function IsFisher(jobID)
 	return jobID == 18
 end
 function PartyMemberWithBuff(hasbuffs, hasnot, maxdistance) 
-	if (maxdistance==nil or maxdistance == "") then
-		maxdistance = 30
-	end
-	
-	local el = MEntityList("myparty,alive,targetable,chartype=4,maxdistance2d="..tostring(maxdistance))
-	--local el = MEntityList("myparty,alive,chartype=4,maxdistance="..tostring(maxdistance))
-	if (table.valid(el)) then
-		for i,entity in pairs(el) do	
-			if ((hasbuffs=="" or HasBuffs(entity,hasbuffs)) and (hasnot=="" or MissingBuffs(entity,hasnot))) then
-				return entity
-			end
-		end
-	end
-	
-	return nil
-end
-function PartySMemberWithBuff(hasbuffs, hasnot, maxdistance) 
-	maxdistance = maxdistance or 30
- 
-	local el = MEntityList("myparty,alive,targetable,chartype=4,maxdistance="..tostring(maxdistance))
-	--local el = MEntityList("myparty,alive,chartype=4,maxdistance="..tostring(maxdistance))
-	if (table.valid(el)) then
-		for i,entity in pairs(el) do	
-			if ((hasbuffs=="" or HasBuffs(entity,hasbuffs)) and (hasnot=="" or MissingBuffs(entity,hasnot))) then
-				return entity
-			end
-		end
-	end
+    if (maxdistance == nil or maxdistance == "") then
+        maxdistance = 30
+    end
 
-	if ((hasbuffs=="" or HasBuffs(Player,hasbuffs)) and (hasnot=="" or MissingBuffs(Player,hasnot))) then
+    local pl = MEntityList("myparty,alive,targetable,chartype=4,maxdistance2d="..tostring(maxdistance))
+    local tl = MEntityList("alive,targetable,chartype=9,maxdistance2d="..tostring(maxdistance))
+    -- Check party members
+    if (table.valid(pl)) then
+        for i,entity in pairs(pl) do    
+            if ((hasbuffs=="" or HasBuffs(entity,hasbuffs)) and (hasnot=="" or MissingBuffs(entity,hasnot))) then
+                return entity
+            end
+        end
+    end
+    -- Check trust NPCs
+    if (table.valid(tl)) then
+        for i,entity in pairs(tl) do    
+            if ((hasbuffs=="" or HasBuffs(entity,hasbuffs)) and (hasnot=="" or MissingBuffs(entity,hasnot))) then
+                return entity
+            end
+        end
+    end
+
+    return nil
+end
+
+function PartySMemberWithBuff(hasbuffs, hasnot, maxdistance) 
+    maxdistance = maxdistance or 30
+
+    local pl = MEntityList("myparty,alive,targetable,chartype=4,maxdistance2d="..tostring(maxdistance))
+    local tl = MEntityList("alive,targetable,chartype=9,maxdistance2d="..tostring(maxdistance))
+
+    -- Check party members
+    if (table.valid(pl)) then
+        for i,entity in pairs(pl) do    
+            if ((hasbuffs=="" or HasBuffs(entity,hasbuffs)) and (hasnot=="" or MissingBuffs(entity,hasnot))) then
+                return entity
+            end
+        end
+    end
+    -- Check trust NPCs
+    if (table.valid(tl)) then
+        for i,entity in pairs(tl) do    
+            if ((hasbuffs=="" or HasBuffs(entity,hasbuffs)) and (hasnot=="" or MissingBuffs(entity,hasnot))) then
+                return entity
+            end
+        end
+    end
+
+    if ((hasbuffs=="" or HasBuffs(Player,hasbuffs)) and (hasnot=="" or MissingBuffs(Player,hasnot))) then
         return Player
     end
-	
-	return nil
+
+    return nil
 end
 
 function MembersWithBuffs(hasbuffs, hasnot, maxdistance, includeself) 
-	local hasbuffs = IsNull(hasbuffs,"")
-	local hasnot = IsNull(hasnot,"")
-	local maxdistance = IsNull(maxdistance,30)
-	local includeself = IsNull(includeself,true)
-	local returnables = {}
-	
-	if (hasbuffs ~= "" or hasnot ~= "") then
-		local el = MEntityList("myparty,alive,targetable,chartype=4,maxdistance2d="..tostring(maxdistance))
-		if (ValidTable(el)) then
-			for i,e in pairs(el) do	
-				if ((hasbuffs=="" or ((table.isa(hasbuffs) and HasBuffs{ entity = e, buffs = hasbuffs.buffs, duration = hasbuffs.duration, ownerid = hasbuffs.ownerid, stacks = hasbuffs.stacks}) or (type(hasbuffs) == "string" and HasBuffs(e,hasbuffs)))) and 
-					(hasnot=="" or ((table.isa(hasnot) and MissingBuffs{ entity = e, buffs = hasnot.buffs, duration = hasnot.duration, ownerid = hasnot.ownerid, stacks = hasnot.stacks}) or (type(hasnot) == "string" and MissingBuffs(e,hasnot)))))
-				then
-					table.insert(returnables,e)
-				end						
-			end
-		end
+    local hasbuffs = IsNull(hasbuffs,"")
+    local hasnot = IsNull(hasnot,"")
+    local maxdistance = IsNull(maxdistance,30)
+    local includeself = IsNull(includeself,true)
+    local returnables = {}
+    local seen = {}
 
-		if (includeself) then
-			if ((hasbuffs=="" or ((table.isa(hasbuffs) and HasBuffs{ entity = Player, buffs = hasbuffs.buffs, duration = hasbuffs.duration, ownerid = hasbuffs.ownerid, stacks = hasbuffs.stacks}) or (type(hasbuffs) == "string" and HasBuffs(Player,hasbuffs)))) and 
-				(hasnot=="" or ((table.isa(hasnot) and MissingBuffs{ entity = Player, buffs = hasnot.buffs, duration = hasnot.duration, ownerid = hasnot.ownerid, stacks = hasnot.stacks}) or (type(hasnot) == "string" and MissingBuffs(Player,hasnot)))))
-			then
-				table.insert(returnables,Player)
-			end
-		end
-	end
-	
-	return returnables
+    if (hasbuffs ~= "" or hasnot ~= "") then
+        local pl = MEntityList("myparty,alive,targetable,chartype=4,maxdistance2d="..tostring(maxdistance))
+        local tl = MEntityList("alive,targetable,chartype=9,maxdistance2d="..tostring(maxdistance))
+
+        -- Helper to check and insert valid entity (avoid duplicating with seen[entity.id])
+        local function check_and_insert(entity)
+            if entity and not seen[entity.id or entity.ID] then
+                local match = false
+                if ((hasbuffs=="" or ((table.isa(hasbuffs) and HasBuffs{ entity = entity, buffs = hasbuffs.buffs, duration = hasbuffs.duration, ownerid = hasbuffs.ownerid, stacks = hasbuffs.stacks}) or (type(hasbuffs) == "string" and HasBuffs(entity,hasbuffs)))) and 
+                    (hasnot=="" or ((table.isa(hasnot) and MissingBuffs{ entity = entity, buffs = hasnot.buffs, duration = hasnot.duration, ownerid = hasnot.ownerid, stacks = hasnot.stacks}) or (type(hasnot) == "string" and MissingBuffs(entity,hasnot)))))
+                then
+                    match = true
+                end
+                if match then
+                    table.insert(returnables,entity)
+                    seen[entity.id or entity.ID] = true
+                end
+            end
+        end
+
+        -- Party list
+        if (ValidTable(pl)) then
+            for i,e in pairs(pl) do
+                check_and_insert(e)
+            end
+        end
+        -- Trust list
+        if (ValidTable(tl)) then
+            for i,e in pairs(tl) do
+                check_and_insert(e)
+            end
+        end
+
+        if (includeself) then
+            check_and_insert(Player)
+        end
+    end
+
+    return returnables
 end
 
 ml_global_information.lastAetheryteCache = 0
@@ -7109,165 +7138,621 @@ local centerPoints = {
 }
 
 -- Portal positions table for Transport1237 function (Moon map)
+
+
 -- Structure: portalPositions[section][portalName] = {pos = {x, y, z}, facing = direction}
+
+
 local portalPositions = {
+
+
 	-- Example structure:
+
+
 	-- [1] = {
+
+
 	--     ["north"] = {pos = {x = 4.5, y = 3, z = -61}, facing = 3.13},
+
+
 	--     ["east"] = {pos = {x = 59, y = 3, z = 4.5}, facing = 1.57},
+
+
 	-- },
+
+
 }
+
+
+
+
 
 -- Center points table for Phaenna map (map ID 1291)
+
+
 local phaennaCenterPoints = {
+
+
 	[1] = {x = 340.81204223633, y = 53.232280731201, z = -424.27734375},
+
+
 	[2] = {x = 300.49435424805, y = 135.00500488281, z = -780.23266601562},
+
+
 	[3] = {x = 705.83892822266, y = 45.015674591064, z = -719.89788818359},
+
+
 	[4] = {x = 779.9892578125, y = 52.006637573242, z = -429.95877075195},
+
+
 	[5] = {x = 729.52398681641, y = 36.549999237061, z = -36.863914489746},
+
+
 	[6] = {x = 329.41143798828, y = 53.049999237061, z = -128.61769104004},
+
+
 	[7] = {x = 9.90452003479, y = -9.4500007629395, z = -127.33629608154},
+
+
 	[8] = {x = -75.855514526367, y = 26.049999237061, z = -401.98278808594},
+
+
 	[9] = {x = -132.62884521484, y = 63.049999237061, z = -755.02081298828},
+
+
 	[10] = {x = -640.17669677734, y = -1.4500000476837, z = -640.10382080078},
+
+
 	[11] = {x = -410.17105102539, y = -1.450000166893, z = -409.90023803711},
+
+
 	[12] = {x = -768.30712890625, y = 14.050000190735, z = -270.01968383789},
+
+
 	[13] = {x = -579.93798828125, y = 25.049999237061, z = 50.097881317139},
+
+
 	[14] = {x = -310.49234008789, y = -4.4500002861023, z = -134.61961364746},
+
+
 	[15] = {x = -159.8309173584, y = 29.049997329712, z = 304.79067993164},
+
+
 	[16] = {x = -88.341079711914, y = 34.549995422363, z = 660.40710449219},
+
+
 	[17] = {x = 184.58963012695, y = -4.9500002861023, z = 430.32192993164},
+
+
 	[18] = {x = 255.0668182373, y = -8.9499998092651, z = 131.74061584473},
-	[19] = {x = 836.99548339844, y = -167.99984741211, z = 435.69207763672, radius = 50},
+
+
+	[19] = {x = 836.99548339844, y = -167.99984741211, z = 435.69207763672},
+
+
 	[20] = {x = 528.12316894531, y = -219.81588745117, z = 751.91760253906},
+
+
 	[21] = {x = 410.08758544922, y = -229.44999694824, z = 229.9786529541},
+
+
 	[22] = {x = 651.92114257812, y = -242, z = 412.4010925293},
+
+
 	[23] = {x = -353.89910888672, y = 11, z = 394.69711303711},
+
+
 	[24] = {x = -591.08990478516, y = 28.5, z = 714.78485107422},
-	[25] = {x = 362, y = -255, z = 419, radius = 100, markeronly = true}, 
-	[26] = {x = 522, y = -255, z = 461, radius = 200, markeronly = true}, 
+
+
 }
 
+
+
+
+
 -- Portal positions table for Transport1291 function (Phaenna map)
+
+
 -- Structure: phaennaPortalPositions[section][portalName] = {pos = {x, y, z}, facing = direction, requires = version}
+
+
 local phaennaPortalPositions = {
+
+
 	[1] = {
+
+
 		["1 South"] = {pos = {x = 335.44281005859, y = 54.712898254395, z = -358.22018432617}, facing = -0.012654781341553, requires = 3},
+
+
 		["1 East"] = {pos = {x = 401.81268310547, y = 54.720272064209, z = -415.56481933594}, facing = 1.5231320858002, requires = 3},
+
+
 		["1 North"] = {pos = {x = 344.38037109375, y = 54.788475036621, z = -482.10101318359}, facing = -3.1412332057953, requires = 3},
+
+
 		["1 West"] = {pos = {x = 278.26257324219, y = 54.703285217285, z = -424.41870117188}, facing = -1.605092048645, requires = 3},
+
+
 	},
+
+
 	[2] = {
+
+
 		["2 West"] = {pos = {x = 280.6510925293, y = 137.11187744141, z = -784.58874511719}, facing = -1.5683875083923, requires = 3},
+
+
 		["2 South"] = {pos = {x = 295.38925170898, y = 137.12284851074, z = -760.60290527344}, facing = 0.014217376708984, requires = 3},
+
+
 		["2 East"] = {pos = {x = 319.10369873047, y = 137.05345153809, z = -775.52221679688}, facing = 1.5640726089478, requires = 3},
+
+
 	},
+
+
 	[3] = {
+
+
 		["3 North"] = {pos = {x = 693.21905517578, y = 47.162975311279, z = -731.97808837891}, facing = -2.1145758628845, requires = 3},
+
+
 		["3 South"] = {pos = {x = 706.93615722656, y = 47.072654724121, z = -702.64990234375}, facing = 0.35668730735779, requires = 3},
+
+
 	},
+
+
 	[4] = {
+
+
 		["4 North"] = {pos = {x = 784.53430175781, y = 54.136222839355, z = -449.45394897461}, facing = 3.1168847084045, requires = 3},
+
+
 		["4 West"] = {pos = {x = 760.48773193359, y = 54.15030670166, z = -434.46020507812}, facing = -1.6024422645569, requires = 3},
+
+
 		["4 South"] = {pos = {x = 775.45471191406, y = 54.149658203125, z = -410.48895263672}, facing = -0.015213012695312, requires = 3},
+
+
 	},
+
+
 	[5] = {
+
+
 		["5 North"] = {pos = {x = 734.57006835938, y = 38.105602264404, z = -56.32381439209}, facing = -3.1168489456177, requires = 3},
+
+
 		["5 West"] = {pos = {x = 710.79028320312, y = 38.079124450684, z = -41.526634216309}, facing = -1.5963478088379, requires = 3},
+
+
 	},
+
+
 	[6] = {
+
+
 		["6 East"] = {pos = {x = 349.74792480469, y = 54.705028533936, z = -123.49275970459}, facing = 1.5488958358765, requires = 3},
+
+
 		["6 South"] = {pos = {x = 325.39205932617, y = 54.616321563721, z = -108.63063049316}, facing = -0.012403011322021, requires = 3},
+
+
 		["6 West"] = {pos = {x = 310.15768432617, y = 54.727970123291, z = -132.47853088379}, facing = -1.6209945678711, requires = 3},
+
+
 		["6 North"] = {pos = {x = 334.47598266602, y = 54.611267089844, z = -147.34788513184}, facing = 3.0946049690247, requires = 3},
+
+
 	},
+
+
 	[7] = {
+
+
 		["7 North"] = {pos = {x = -0.69419074058533, y = -7.8070383071899, z = -144.15887451172}, facing = -2.3638982772827, requires = 3},
+
+
 		["7 South"] = {pos = {x = 20.726938247681, y = -7.7953882217407, z = -109.8038482666}, facing = 0.77561831474304, requires = 3},
+
+
 		["7 West"] = {pos = {x = -7.4188623428345, y = -7.7117071151733, z = -115.99282073975}, facing = -0.79098653793335, requires = 3},
+
+
 		["7 East"] = {pos = {x = 27.120849609375, y = -7.8077831268311, z = -137.72773742676}, facing = 2.3547949790955, requires = 3},
+
+
 	},
+
+
 	[8] = {
+
+
 		["8 West"] = {pos = {x = -94.784133911133, y = 27.478994369507, z = -406.62219238281}, facing = -1.5451340675354, requires = 3},
+
+
 		["8 North"] = {pos = {x = -71.450614929199, y = 27.457103729248, z = -420.69268798828}, facing = -3.1033663749695, requires = 3},
+
+
 		["8 East"] = {pos = {x = -56.633628845215, y = 27.615243911743, z = -397.41510009766}, facing = 1.5755242109299, requires = 3},
+
+
 		["8 South"] = {pos = {x = -80.446273803711, y = 27.536111831665, z = -382.97152709961}, facing = -0.02249002456665, requires = 3},
+
+
 	},
+
+
 	[9] = {
+
+
 		["9 West"] = {pos = {x = -152.2115020752, y = 64.502410888672, z = -757.90411376953}, facing = -1.4898562431335, requires = 3},
+
+
 		["9 South"] = {pos = {x = -135.81600952148, y = 64.560539245605, z = -735.54821777344}, facing = 0.070456266403198, requires = 3},
+
+
 		["9 East"] = {pos = {x = -113.65897369385, y = 64.535682678223, z = -752.23718261719}, facing = 1.6307830810547, requires = 3},
+
+
 	},
+
+
 	[10] = {
+
+
 		["10 South"] = {pos = {x = -656.77233886719, y = 0.062476754188538, z = -629.70349121094}, facing = -0.78653764724731, requires = 3},
+
+
 		["10 South East"] = {pos = {x = -629.52423095703, y = 0.098739981651306, z = -623.18896484375}, facing = 0.72142219543457, requires = 3},
+
+
 		["10 North"] = {pos = {x = -623.51904296875, y = 0.015967726707458, z = -650.30834960938}, facing = 2.3320145606995, requires = 3},
+
+
 	},
+
+
 	[11] = {
+
+
 		["11 North"] = {pos = {x = -415.42221069336, y = -0.049300670623779, z = -428.42251586914}, facing = -2.614227771759, requires = 3},
+
+
 		["11 East"] = {pos = {x = -391.35348510742, y = 0.016456723213196, z = -415.59317016602}, facing = 2.0437049865723, requires = 3},
+
+
 		["11 South"] = {pos = {x = -404.26916503906, y = 0.072002291679382, z = -391.16036987305}, facing = 0.49805617332458, requires = 3},
+
+
 		["11 West"] = {pos = {x = -428.5358581543, y = -0.015488028526306, z = -404.48669433594}, facing = -1.0580801963806, requires = 3},
+
+
 	},
+
+
 	[12] = {
+
+
 		["12 East"] = {pos = {x = -749.30236816406, y = 15.457899093628, z = -265.50018310547}, facing = 1.539519071579, requires = 3},
+
+
 		["12 South"] = {pos = {x = -772.53259277344, y = 15.569341659546, z = -250.83029174805}, facing = -0.016607284545898, requires = 3},
+
+
 		["12 North"] = {pos = {x = -763.44354248047, y = 15.576946258545, z = -289.20202636719}, facing = -3.12468957901, requires = 3},
+
+
 	},
+
+
 	[13] = {
+
+
 		["13 South"] = {pos = {x = -584.45642089844, y = 26.543340682983, z = 69.059196472168}, facing = 0.010619640350342, requires = 15},
+
+
 		["13 West"] = {pos = {x = -597.75872802734, y = 26.237712860107, z = 45.515167236328}, facing = -1.608350276947, requires = 3},
+
+
 		["13 East"] = {pos = {x = -560.92022705078, y = 26.547811508179, z = 54.541576385498}, facing = 1.5688467025757, requires = 3},
+
+
 	},
+
+
 	[14] = {
+
+
 		["14 East"] = {pos = {x = -292.8388671875, y = -2.8136219978333, z = -145.65234375}, facing = 2.3666830062866, requires = 3},
+
+
 		["14 South"] = {pos = {x = -299.26968383789, y = -2.804785490036, z = -117.86373138428}, facing = 0.76867461204529, requires = 3},
+
+
 		["14 West"] = {pos = {x = -327.21426391602, y = -2.7655930519104, z = -124.11211395264}, facing = -0.80211496353149, requires = 3},
+
+
 		["14 North"] = {pos = {x = -320.95230102539, y = -2.7299892902374, z = -152.3638458252}, facing = -2.3708186149597, requires = 3},
+
+
 	},
+
+
 	[15] = {
+
+
 		["15 North"] = {pos = {x = -155.56791687012, y = 30.692188262939, z = 285.30819702148}, facing = 3.1173610687256, requires = 3},
+
+
 		["15 East"] = {pos = {x = -139.88655090332, y = 30.791036605835, z = 309.4778137207}, facing = 1.527715086937, requires = 3},
+
+
 		["15 South"] = {pos = {x = -164.53030395508, y = 30.692029953003, z = 324.6911315918}, facing = -0.023638248443604, requires = 3},
+
+
 	},
+
+
 	[16] = {
+
+
 		["16 North"] = {pos = {x = -83.446899414062, y = 36.184600830078, z = 640.34045410156}, facing = -3.1358206272125, requires = 3},
+
+
 		["16 East"] = {pos = {x = -68.001731872559, y = 36.263927459717, z = 664.58166503906}, facing = 1.5682384967804, requires = 3},
+
+
 	},
+
+
 	[17] = {
+
+
 		["17 South"] = {pos = {x = 180.55389404297, y = -3.349100112915, z = 449.5163269043}, facing = -0.020385265350342, requires = 3},
+
+
 		["17 West"] = {pos = {x = 165.22975158691, y = -3.2889921665192, z = 425.54071044922}, facing = -1.5932784080505, requires = 3},
+
+
 		["17 North"] = {pos = {x = 189.46684265137, y = -3.2384967803955, z = 410.01361083984}, facing = 3.1316757202148, requires = 3},
+
+
 	},
+
+
 	[18] = {
+
+
 		["18 South"] = {pos = {x = 250.40814208984, y = -7.2467384338379, z = 151.95135498047}, facing = -0.0060591697692871, requires = 3},
+
+
 		["18 West"] = {pos = {x = 235.23783874512, y = -7.29088306427, z = 127.39561462402}, facing = -1.6187477111816, requires = 3},
+
+
 		["18 North"] = {pos = {x = 259.66940307617, y = -7.3011531829834, z = 112.27989959717}, facing = -3.1246209144592, requires = 3},
+
+
 		["18 East"] = {pos = {x = 274.87707519531, y = -7.2645902633667, z = 136.57699584961}, facing = 1.5810908079147, requires = 9},
+
+
 	},
+
+
 	[19] = {
+
+
 		["19 North"] = {pos = {x = 835.71246337891, y = -165.84983825684, z = 417.6955871582}, facing = -2.8157787322998, requires = 9},
+
+
 		["19 South"] = {pos = {x = 827.09887695312, y = -165.75074768066, z = 449.61749267578}, facing = -0.34333086013794, requires = 9},
+
+
 	},
+
+
 	[20] = {
+
+
 		["20 East"] = {pos = {x = 546.57580566406, y = -217.72845458984, z = 753.64434814453}, facing = 1.7485721111298, requires = 9},
+
+
 		["20 West"] = {pos = {x = 516.11279296875, y = -217.76351928711, z = 739.70544433594}, facing = -2.1073679924011, requires = 9},
+
+
 	},
+
+
 	[21] = {
+
+
 		["21 South"] = {pos = {x = 402.00695800781, y = -227.70248413086, z = 249.0407409668}, facing = -0.15734910964966, requires = 9},
+
+
 		["21 East"] = {pos = {x = 428.91177368164, y = -227.73727416992, z = 237.87274169922}, facing = 1.3945111036301, requires = 9},
+
+
 	},
+
+
 	[22] = {
+
+
 		["22 West"] = {pos = {x = 666.41296386719, y = -239.86967468262, z = 420.05157470703}, facing = -2.3591361045837, requires = 9},
+
+
 	},
+
+
 	[23] = {
+
+
 		["23 South"] = {pos = {x = -360.09902954102, y = 12.913031578064, z = 408.48693847656}, facing = -0.18243551254272, requires = 15},
+
+
 		["23 North"] = {pos = {x = -356.82244873047, y = 12.94538974762, z = 377.64999389648}, facing = -2.6249966621399, requires = 15},
+
+
 	},
+
+
 	[24] = {
+
+
 		["24 North"] = {pos = {x = -585.68463134766, y = 29.867956161499, z = 719.50628662109}, facing = 1.5795422792435, requires = 15},
+
+
 	},
+
+
 }
+
+
+
+
+
+-- Function to save center point (Moon map)
+
+
+function SaveCenterPoint(section, pos)
+
+
+	if not section or not pos then
+
+
+		return false
+
+
+	end
+
+
+	centerPoints[section] = {x = pos.x, y = pos.y, z = pos.z}
+
+
+	return true
+
+
+end
+
+
+
+
+
+-- Function to save portal position (Moon map)
+
+
+function SavePortalPosition(section, portalName, pos, facing)
+
+
+	if not section or not portalName or not pos or not facing then
+
+
+		return false
+
+
+	end
+
+
+	if not portalPositions[section] then
+
+
+		portalPositions[section] = {}
+
+
+	end
+
+
+	portalPositions[section][portalName] = {
+
+
+		pos = {x = pos.x, y = pos.y, z = pos.z},
+
+
+		facing = facing
+
+
+	}
+
+
+	return true
+
+
+end
+
+
+
+
+
+-- Function to save center point (Phaenna map)
+
+
+function SavePhaennaCenterPoint(section, pos)
+
+
+	if not section or not pos then
+
+
+		return false
+
+
+	end
+
+
+	phaennaCenterPoints[section] = {x = pos.x, y = pos.y, z = pos.z}
+
+
+	return true
+
+
+end
+
+
+
+
+
+-- Function to save portal position (Phaenna map)
+
+
+function SavePhaennaPortalPosition(section, portalName, pos, facing)
+
+
+	if not section or not portalName or not pos or not facing then
+
+
+		return false
+
+
+	end
+
+
+	if not phaennaPortalPositions[section] then
+
+
+		phaennaPortalPositions[section] = {}
+
+
+	end
+
+
+	phaennaPortalPositions[section][portalName] = {
+
+
+		pos = {x = pos.x, y = pos.y, z = pos.z},
+
+
+		facing = facing
+
+
+	}
+
+
+	return true
+
+
+end
 
 function GetCosmicMoon(pos,closest)
 	local closestIndex = 0
@@ -7308,6 +7793,1452 @@ function GetCosmicMoon(pos,closest)
 	-- default if no match
 	return closestIndex 
 end
+
+-- Phaenna map functions (map ID 1291)
+
+
+function GetPhaenna(pos, closest)
+
+
+	local closestIndex = 0
+
+
+	local closestDistance = math.huge
+
+
+	
+
+
+	for index, centerPos in pairs(phaennaCenterPoints) do
+
+
+		local distance = math.distance2d(pos, centerPos)
+
+
+		local threshold = IsNull(centerPos.radius, 150)
+
+
+		if not centerPos.markeronly then
+
+
+			if distance < closestDistance then
+
+
+				closestDistance = distance
+
+
+				closestIndex = index
+
+
+			end
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	-- default if no match
+
+
+	return closestIndex
+
+
+end
+
+
+
+
+
+if not ff.phaennaPathingData then
+
+
+	ff.phaennaPathingData = {}
+
+
+end
+
+
+if not ff.lastPhaennaTransportCheck then
+
+
+	ff.lastPhaennaTransportCheck = {
+
+
+		pos1 = nil,
+
+
+		pos2 = nil,
+
+
+		result = nil
+
+
+	}
+
+
+end
+
+
+
+
+
+function CalcPhaennaTransport(pos1, pos2, pos1Section, pos2Section)
+
+
+	-- Check if positions are close to last check (within 100 units)
+
+
+	local last = ff.lastPhaennaTransportCheck
+
+
+	if last.pos1 and last.pos2 then
+
+
+		if math.distance2d(pos1, last.pos1) < 100 and math.distance2d(pos2, last.pos2) < 100 then
+
+
+			return last.result
+
+
+		end
+
+
+	end
+
+
+
+
+
+	-- Check for existing cached pathingData
+
+
+	if ff.phaennaPathingData[pos1Section] and ff.phaennaPathingData[pos1Section][pos2.x] and ff.phaennaPathingData[pos1Section][pos2.x][pos2.z] ~= nil then
+
+
+		local cached = ff.phaennaPathingData[pos1Section][pos2.x][pos2.z]
+
+
+		ff.lastPhaennaTransportCheck = { pos1 = pos1, pos2 = pos2, result = cached }
+
+
+		return cached
+
+
+	end
+
+
+
+
+
+	-- Only calculate if all data is present
+
+
+	if pos1 and pos2 and phaennaCenterPoints[pos1Section] and phaennaCenterPoints[pos2Section] then
+
+
+		local distance1 = GetPathDistance(pos1, pos2) * 1.5
+
+
+		local distance2 =
+
+
+			GetPathDistance(pos1, phaennaCenterPoints[pos1Section]) +
+
+
+			GetPathDistance(phaennaCenterPoints[pos2Section], pos2)
+
+
+
+
+
+		-- Init pathingData table
+
+
+		ff.phaennaPathingData[pos1Section] = ff.phaennaPathingData[pos1Section] or {}
+
+
+		ff.phaennaPathingData[pos1Section][pos2.x] = ff.phaennaPathingData[pos1Section][pos2.x] or {}
+
+
+
+
+
+		local result
+
+
+		if distance1 > distance2 then
+
+
+			result = true
+
+
+		else
+
+
+			result = false
+
+
+		end
+
+
+
+
+
+		-- Save result in both pathingData and last check
+
+
+		ff.phaennaPathingData[pos1Section][pos2.x][pos2.z] = result
+
+
+		ff.lastPhaennaTransportCheck = { pos1 = pos1, pos2 = pos2, result = result }
+
+
+		return result
+
+
+	end
+
+
+
+
+
+	return false
+
+
+end
+
+
+
+
+
+-- Helper function to check if portal meets version requirements
+
+
+local function PortalMeetsVersion(portalData)
+
+
+	if not portalData then
+
+
+		return false
+
+
+	end
+
+
+	local requiredVersion = portalData.requires or 3
+
+
+	return ffxivminion.PhaennaMapVersion >= requiredVersion
+
+
+end
+
+
+
+
+
+-- Helper function to find the best portal for a section connection (cycles through portals)
+
+
+local portalCycleIndex = {}
+
+
+local portalCycleDirection = {}
+
+
+
+
+
+local function FindPhaennaPortal(sourceSection, targetSection)
+
+
+	if not phaennaPortalPositions[sourceSection] then
+
+
+		return nil
+
+
+	end
+
+
+	
+
+
+	local sourceCenter = phaennaCenterPoints[sourceSection]
+
+
+	local targetCenter = phaennaCenterPoints[targetSection]
+
+
+	
+
+
+	if not sourceCenter or not targetCenter then
+
+
+		return nil
+
+
+	end
+
+
+	
+
+
+	-- Calculate direction from source to target
+
+
+	local dx = targetCenter.x - sourceCenter.x
+
+
+	local dz = targetCenter.z - sourceCenter.z
+
+
+	
+
+
+	-- Determine primary direction
+
+
+	local primaryDir = nil
+
+
+	if math.abs(dx) > math.abs(dz) then
+
+
+		if dx > 0 then
+
+
+			primaryDir = "East"
+
+
+		else
+
+
+			primaryDir = "West"
+
+
+		end
+
+
+	else
+
+
+		if dz > 0 then
+
+
+			primaryDir = "South"
+
+
+		else
+
+
+			primaryDir = "North"
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	-- Try to find portal by direction name
+
+
+	local portals = phaennaPortalPositions[sourceSection]
+
+
+	local validPortals = {}
+
+
+	
+
+
+	-- First, check for special portals (Lava connections)
+
+
+	if targetSection == 13 or targetSection == 23 or targetSection == 24 then
+
+
+		if portals["13 South"] and PortalMeetsVersion(portals["13 South"]) then
+
+
+			table.insert(validPortals, portals["13 South"])
+
+
+		end
+
+
+		if portals["23 South"] and PortalMeetsVersion(portals["23 South"]) then
+
+
+			table.insert(validPortals, portals["23 South"])
+
+
+		end
+
+
+		if portals["23 North"] and PortalMeetsVersion(portals["23 North"]) then
+
+
+			table.insert(validPortals, portals["23 North"])
+
+
+		end
+
+
+		if portals["24 North"] and PortalMeetsVersion(portals["24 North"]) then
+
+
+			table.insert(validPortals, portals["24 North"])
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	-- Check for section-specific portals (e.g., "13 West", "12 East")
+
+
+	for portalName, portalData in pairs(portals) do
+
+
+		local sectionNum = tonumber(string.match(portalName, "^(%d+)"))
+
+
+		if sectionNum == targetSection and PortalMeetsVersion(portalData) then
+
+
+			table.insert(validPortals, portalData)
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	-- Try directional portals
+
+
+	if primaryDir and portals[primaryDir] and PortalMeetsVersion(portals[primaryDir]) then
+
+
+		table.insert(validPortals, portals[primaryDir])
+
+
+	end
+
+
+	
+
+
+	-- Try section-specific directional portals (e.g., "1 North", "2 South")
+
+
+	for portalName, portalData in pairs(portals) do
+
+
+		if string.find(portalName, primaryDir) and PortalMeetsVersion(portalData) then
+
+
+			table.insert(validPortals, portalData)
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	-- Fallback: add all available portals that meet version requirements
+
+
+	for portalName, portalData in pairs(portals) do
+
+
+		if PortalMeetsVersion(portalData) then
+
+
+			local alreadyAdded = false
+
+
+			for _, vp in ipairs(validPortals) do
+
+
+				if vp == portalData then
+
+
+					alreadyAdded = true
+
+
+					break
+
+
+				end
+
+
+			end
+
+
+			if not alreadyAdded then
+
+
+				table.insert(validPortals, portalData)
+
+
+			end
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	if #validPortals == 0 then
+
+
+		return nil
+
+
+	end
+
+
+	
+
+
+	-- Cycle through portals back and forth
+
+
+	local cycleKey = tostring(sourceSection) .. "_" .. tostring(targetSection)
+
+
+	if not portalCycleIndex[cycleKey] then
+
+
+		portalCycleIndex[cycleKey] = 1
+
+
+		portalCycleDirection[cycleKey] = 1 -- 1 for forward, -1 for backward
+
+
+	end
+
+
+	
+
+
+	local currentIndex = portalCycleIndex[cycleKey]
+
+
+	local portal = validPortals[currentIndex]
+
+
+	
+
+
+	-- Move to next portal
+
+
+	if portalCycleDirection[cycleKey] == 1 then
+
+
+		-- Moving forward
+
+
+		if currentIndex >= #validPortals then
+
+
+			-- Reached end, reverse direction
+
+
+			portalCycleDirection[cycleKey] = -1
+
+
+			portalCycleIndex[cycleKey] = currentIndex - 1
+
+
+		else
+
+
+			portalCycleIndex[cycleKey] = currentIndex + 1
+
+
+		end
+
+
+	else
+
+
+		-- Moving backward
+
+
+		if currentIndex <= 1 then
+
+
+			-- Reached start, reverse direction
+
+
+			portalCycleDirection[cycleKey] = 1
+
+
+			portalCycleIndex[cycleKey] = currentIndex + 1
+
+
+		else
+
+
+			portalCycleIndex[cycleKey] = currentIndex - 1
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	return portal
+
+
+end
+
+
+
+
+
+function Transport1291(pos1, pos2)
+
+
+	local pos1 = pos1 or Player.pos
+
+
+	local pos2 = pos2
+
+
+	local pos1Section = GetPhaenna(pos1)
+
+
+	local pos2Section = GetPhaenna(pos2, true)
+
+
+	
+
+
+	-- Check if we're on the Phaenna map
+
+
+	if Player.localmapid ~= 1291 then
+
+
+		return false
+
+
+	end
+
+
+	
+
+
+	-- cosmoliner introduced map 3
+
+
+	if ffxivminion.PhaennaMapVersion < 3 then
+
+
+		return false
+
+
+	end
+
+
+	
+
+
+	-- Need valid sections
+
+
+	if not pos1Section or pos1Section == 0 or not pos2Section or pos2Section == 0 then
+
+
+		return false
+
+
+	end
+
+
+	
+
+
+	-- Check map version requirements for specific sectors
+
+
+	-- Sectors 19, 20, 21, 22 require version >= 9
+
+
+	if In(pos1Section, 19, 20, 21, 22) or In(pos2Section, 19, 20, 21, 22) then
+
+
+		if ffxivminion.PhaennaMapVersion < 9 then
+
+
+			return false
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	-- Sectors 23, 24 require version >= 15
+
+
+	if In(pos1Section, 23, 24) or In(pos2Section, 23, 24) then
+
+
+		if ffxivminion.PhaennaMapVersion < 15 then
+
+
+			return false
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	-- Same section, no transport needed
+
+
+	if pos1Section == pos2Section then
+
+
+		return false
+
+
+	end
+
+
+	
+
+
+	-- Check if transport is beneficial
+
+
+	if not CalcPhaennaTransport(pos1, pos2, pos1Section, pos2Section) then
+
+
+		return false
+
+
+	end
+
+
+	
+
+
+	-- Static format portal selection based on sections
+
+
+	local portalData = nil
+
+
+	
+
+
+	if In(pos1Section, 1) then
+
+
+		if In(pos2Section, 2) then
+
+
+			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 North"]
+
+
+		elseif In(pos2Section, 3,4,5) then
+
+
+			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 East"]
+
+
+		elseif In(pos2Section, 6,7,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 South"]
+
+
+		elseif In(pos2Section, 8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 West"]
+
+
+		end
+
+
+	elseif In(pos1Section, 2) then
+
+
+		if In(pos2Section, 1,6,18,17,16) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 South"]
+
+
+		elseif In(pos2Section, 3, 4, 5) then
+
+
+			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 East"]
+
+
+		elseif In(pos2Section, 8,9,10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 West"]
+
+
+		end
+
+
+	elseif In(pos1Section, 3) then
+
+
+		if In(pos2Section, 1,2,8,9,10,11,12) then
+
+
+			portalData = phaennaPortalPositions[3] and phaennaPortalPositions[3]["3 North"]
+
+
+		elseif In(pos2Section, 4,5,6,7,13,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
+
+
+			portalData = phaennaPortalPositions[3] and phaennaPortalPositions[3]["3 South"]
+
+
+		end
+
+
+	elseif In(pos1Section, 4) then
+
+
+		-- add 4 west
+
+
+		if In(pos2Section, 3,2,9) then
+
+
+			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 North"]
+
+
+		elseif In(pos2Section, 1,8,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
+
+
+			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 West"]
+
+
+		elseif In(pos2Section, 5,6,7,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 South"]
+
+
+		end
+
+
+	elseif In(pos1Section, 5) then
+
+
+		if In(pos2Section, 1,2,3,4,8,9,10,11,12) then
+
+
+			portalData = phaennaPortalPositions[5] and phaennaPortalPositions[5]["5 North"]
+
+
+		elseif In(pos2Section, 6,7,13,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[5] and phaennaPortalPositions[5]["5 West"]
+
+
+		end
+
+
+	elseif In(pos1Section, 6) then
+
+
+		if In(pos2Section, 1,2,3) then
+
+
+			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 North"]
+
+
+		elseif In(pos2Section, 4,5) then
+
+
+			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 East"]
+
+
+		elseif In(pos2Section, 7,8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 West"]
+
+
+		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 South"]
+
+
+		end
+
+
+	elseif In(pos1Section, 7) then
+
+
+		if In(pos2Section, 1,2,3,4,5,6) then
+
+
+			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 East"]
+
+
+		elseif In(pos2Section, 8,9,10,11,12) then
+
+
+			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 North"]
+
+
+		elseif In(pos2Section, 14,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
+
+
+			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 West"]
+
+
+		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 South"]
+
+
+		end
+
+
+	elseif In(pos1Section, 8) then
+
+
+		if In(pos2Section, 1,4,3,5) then
+
+
+			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 East"]
+
+
+		elseif In(pos2Section, 9,2) then
+
+
+			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 North"]
+
+
+		elseif In(pos2Section, 7,6,5,18,17,16,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 South"]
+
+
+		elseif In(pos2Section, 10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 West"]
+
+
+		end
+
+
+	elseif In(pos1Section, 9) then
+
+
+		if In(pos2Section, 1,2,3,4,5,6,7) then
+
+
+			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 East"]
+
+
+		elseif In(pos2Section, 8,7,6,18,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 South"]
+
+
+		elseif In(pos2Section, 10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 West"]
+
+
+		end
+
+
+	elseif In(pos1Section, 10) then
+
+
+		if In(pos2Section, 9,2,3) then
+
+
+			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 North"]
+
+
+		elseif In(pos2Section, 11,8,14,7,6,5,1,4,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 South East"]
+
+
+		elseif In(pos2Section, 12,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
+
+
+			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 South"]
+
+
+		end
+
+
+	elseif In(pos1Section, 11) then
+
+
+		if In(pos2Section, 10) then
+
+
+			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 North"]
+
+
+		elseif In(pos2Section, 14,15,16,17,7,18,13) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 South"]
+
+
+		elseif In(pos2Section, 8,1,4,3,5,6,7) then
+
+
+			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 East"]
+
+
+		elseif In(pos2Section, 12) then
+
+
+			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 West"]
+
+
+		end
+
+
+	elseif In(pos1Section, 12) then
+
+
+		if In(pos2Section, 10,9,2) then
+
+
+			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 North"]
+
+
+		elseif In(pos2Section, 13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 South"]
+
+
+		elseif In(pos2Section, 1,3,4,5,6,7,8,11,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 East"]
+
+
+		end
+
+
+	elseif In(pos1Section, 13) then
+
+
+		if In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 South"]
+
+
+		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12) then
+
+
+			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 West"]
+
+
+		elseif In(pos2Section, 14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 East"]
+
+
+		end
+
+
+	elseif In(pos1Section, 14) then
+
+
+		if In(pos2Section, 13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 West"]
+
+
+		elseif In(pos2Section, 1,2,3,4,5,6) then
+
+
+			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 North"]
+
+
+		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 South"]
+
+
+		elseif In(pos2Section, 7,8,9,10,11,12) then
+
+
+			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 East"]
+
+
+		end
+
+
+	elseif In(pos1Section, 15) then
+
+
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 North"]
+
+
+		elseif In(pos2Section, 16) then
+
+
+			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 South"]
+
+
+		elseif In(pos2Section, 17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 East"]
+
+
+		end
+
+
+	elseif In(pos1Section, 16) then
+
+
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[16] and phaennaPortalPositions[16]["16 North"]
+
+
+		elseif In(pos2Section, 17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[16] and phaennaPortalPositions[16]["16 East"]
+
+
+		end
+
+
+	elseif In(pos1Section, 17) then
+
+
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 North"]
+
+
+		elseif In(pos2Section, 16) then
+
+
+			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 South"]
+
+
+		elseif In(pos2Section, 12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 West"]
+
+
+		end
+
+
+	elseif In(pos1Section, 18) then
+
+
+		if In(pos2Section, 1,2,3,4,5,6,8,9,10,11,12) then
+
+
+			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 North"]
+
+
+		elseif In(pos2Section, 15,17,16) then
+
+
+			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 South"]
+
+
+		elseif In(pos2Section, 7,14,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 West"]
+
+
+		elseif In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 East"]
+
+
+		end
+
+
+	elseif In(pos1Section, 19) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+		-- Section 19 portals (requires version >= 9)
+
+
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18) then
+
+
+			portalData = phaennaPortalPositions[19] and phaennaPortalPositions[19]["19 North"]
+
+
+		elseif In(pos2Section, 20,21,22,23,24) then
+
+
+			portalData = phaennaPortalPositions[19] and phaennaPortalPositions[19]["19 South"]
+
+
+		end
+
+
+	elseif In(pos1Section, 20) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+		if In(pos2Section, 19,21,22) then
+
+
+			portalData = phaennaPortalPositions[20] and phaennaPortalPositions[20]["20 East"]
+
+
+		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,23,24) then
+
+
+			portalData = phaennaPortalPositions[20] and phaennaPortalPositions[20]["20 West"]
+
+
+		end
+
+
+	elseif In(pos1Section, 21) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+		if In(pos2Section, 19,20,22) then
+
+
+			portalData = phaennaPortalPositions[21] and phaennaPortalPositions[21]["21 South"]
+
+
+		elseif In(pos2Section, 23,24) then
+
+
+			portalData = phaennaPortalPositions[21] and phaennaPortalPositions[21]["21 East"]
+
+
+		end
+
+
+	elseif In(pos1Section, 22) and ffxivminion.PhaennaMapVersion >= 9 then
+
+
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,23,24) then
+
+
+			portalData = phaennaPortalPositions[22] and phaennaPortalPositions[22]["22 West"]
+
+
+		end
+
+
+	elseif In(pos1Section, 23) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+		if In(pos2Section, 24) then
+
+
+			portalData = phaennaPortalPositions[23] and phaennaPortalPositions[23]["23 South"]
+
+
+		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22) then
+
+
+			portalData = phaennaPortalPositions[23] and phaennaPortalPositions[23]["23 North"]
+
+
+		end
+
+
+	elseif In(pos1Section, 24) and ffxivminion.PhaennaMapVersion >= 15 then
+
+
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23) then
+
+
+			portalData = phaennaPortalPositions[24] and phaennaPortalPositions[24]["24 North"]
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	-- Check version requirements for portal
+
+
+	if portalData and portalData.requires then
+
+
+		if ffxivminion.PhaennaMapVersion < portalData.requires then
+
+
+			portalData = nil
+
+
+		end
+
+
+	end
+
+
+	
+
+
+	-- Fallback to FindPhaennaPortal if no static match found
+
+
+	if not portalData then
+
+
+		portalData = FindPhaennaPortal(pos1Section, pos2Section)
+
+
+	end
+
+
+	
+
+
+	if not portalData then
+
+
+		return false
+
+
+	end
+
+
+	
+
+
+	local portalPos = portalData.pos
+
+
+	local distance = math.distance2d(pos1, portalPos)
+
+
+	
+
+
+	if distance > 2 then
+
+
+		return true, function()
+
+
+			local newTask = ffxiv_task_movetopos.Create()
+
+
+			newTask.pos = portalPos
+
+
+			ml_task_hub:CurrentTask():AddSubTask(newTask)
+
+
+		end
+
+
+	else
+
+
+		return true, function()
+
+
+			Player:SetFacing(portalData.facing)
+
+
+			Player:Move(FFXIV.MOVEMENT.FORWARD)
+
+
+		end
+
+
+	end
+
+
+end
+
 if not ff.lastTransportCheck then
 	ff.lastTransportCheck = {
 		pos1 = nil,
@@ -7337,10 +9268,6 @@ function CalcMoonTransport(pos1, pos2, pos1Section, pos2Section)
 
 	-- Only calculate if all data is present
 	if pos1 and pos2 and centerPoints[pos1Section] and centerPoints[pos2Section] then
-		local distance = GetPathDistance(pos1, pos2)
-		if distance < 150 then
-			return false
-		end
 		local distance1 = GetPathDistance(pos1, pos2) * 1.5
 		local distance2 =
 			GetPathDistance(pos1, centerPoints[pos1Section]) +
@@ -7367,93 +9294,7 @@ function CalcMoonTransport(pos1, pos2, pos1Section, pos2Section)
 
 	return false
 end
-function CalcPhaennaTransport(pos1, pos2, pos1Section, pos2Section)
-	-- Check if positions are close to last check (within 100 units)
-	local last = ff.lastPhaennaTransportCheck
-	if last.pos1 and last.pos2 then
-		if math.distance2d(pos1, last.pos1) < 100 and math.distance2d(pos2, last.pos2) < 100 then
-			return last.result
-		end
-	end
 
-	-- Check for existing cached pathingData
-	if ff.phaennaPathingData[pos1Section] and ff.phaennaPathingData[pos1Section][pos2.x] and ff.phaennaPathingData[pos1Section][pos2.x][pos2.z] ~= nil then
-		local cached = ff.phaennaPathingData[pos1Section][pos2.x][pos2.z]
-		ff.lastPhaennaTransportCheck = { pos1 = pos1, pos2 = pos2, result = cached }
-		return cached
-	end
-
-	-- Only calculate if all data is present
-	if pos1 and pos2 and phaennaCenterPoints[pos1Section] and phaennaCenterPoints[pos2Section] then
-		local distance = GetPathDistance(pos1, pos2)
-		if distance < 150 then
-			return false
-		end
-		local distance1 = GetPathDistance(pos1, pos2) * 1.5
-		local distance2 =
-			GetPathDistance(pos1, phaennaCenterPoints[pos1Section]) +
-			GetPathDistance(phaennaCenterPoints[pos2Section], pos2)
-
-		-- Init pathingData table
-		ff.phaennaPathingData[pos1Section] = ff.phaennaPathingData[pos1Section] or {}
-		ff.phaennaPathingData[pos1Section][pos2.x] = ff.phaennaPathingData[pos1Section][pos2.x] or {}
-
-		local result
-		if distance1 > distance2 then
-			result = true
-		else
-			result = false
-		end
-
-		-- Save result in both pathingData and last check
-		ff.phaennaPathingData[pos1Section][pos2.x][pos2.z] = result
-		ff.lastPhaennaTransportCheck = { pos1 = pos1, pos2 = pos2, result = result }
-		return result
-	end
-
-	return false
-end
--- Phaenna map functions (map ID 1291)
--- Helper function to find the best portal for a section connection (cycles through portals)
-local portalCycleIndex = {}
-local portalCycleDirection = {}
-function GetPhaenna(pos, closest)
-	local closestIndex = 0
-	local closestDistance = math.huge
-	
-	local distance = math.distance2d(pos,phaennaCenterPoints[25])
-	if distance < phaennaCenterPoints[25].radius then
-		return 21
-	end
-	local distance = math.distance2d(pos,phaennaCenterPoints[26])
-	if distance < phaennaCenterPoints[26].radius then
-		return 22
-	end
-	for index, centerPos in pairs(phaennaCenterPoints) do
-		local distance = math.distance2d(pos, centerPos)
-		local threshold = IsNull(centerPos.radius, 150)
-		if not centerPos.markeronly then
-			if distance < closestDistance then
-				closestDistance = distance
-				closestIndex = index
-			end
-		end
-	end
-	
-	-- default if no match
-	return closestIndex
-end
-
-if not ff.phaennaPathingData then
-	ff.phaennaPathingData = {}
-end
-if not ff.lastPhaennaTransportCheck then
-	ff.lastPhaennaTransportCheck = {
-		pos1 = nil,
-		pos2 = nil,
-		result = nil
-	}
-end
 function Transport1237(pos1,pos2)
 	local pos1 = pos1 or Player.pos
 	local pos2 = pos2
@@ -8574,271 +10415,6 @@ function Transport1237(pos1,pos2)
 	end 
 	return false
 end
-function Transport1291(pos1, pos2)
-	local pos1 = pos1 or Player.pos
-	local pos2 = pos2
-	local pos1Section = GetPhaenna(pos1)
-	local pos2Section = GetPhaenna(pos2, true)
-	
-	-- Check if we're on the Phaenna map
-	if Player.localmapid ~= 1291 then
-		return false
-	end
-	
-	-- cosmoliner introduced map 3
-	if ffxivminion.PhaennaMapVersion < 3 then
-		return false
-	end
-	
-	-- Need valid sections
-	if not pos1Section or pos1Section == 0 or not pos2Section or pos2Section == 0 then
-		return false
-	end
-	
-	-- Check map version requirements for specific sectors
-	-- Sectors 19, 20, 21, 22 require version >= 9
-	if In(pos1Section, 19, 20, 21, 22) or In(pos2Section, 19, 20, 21, 22) then
-		if ffxivminion.PhaennaMapVersion < 9 then
-			return false
-		end
-	end
-	
-	-- Sectors 23, 24 require version >= 15
-	if In(pos1Section, 23, 24) or In(pos2Section, 23, 24) then
-		if ffxivminion.PhaennaMapVersion < 15 then
-			return false
-		end
-	end
-	
-	-- Same section, no transport needed
-	if pos1Section == pos2Section then
-		return false
-	end
-	
-	-- Check if transport is beneficial
-	if not CalcPhaennaTransport(pos1, pos2, pos1Section, pos2Section) then
-		return false
-	end
-	
-	-- Static format portal selection based on sections
-	local portalData = nil
-	
-	if In(pos1Section, 1) then
-		if In(pos2Section, 2) then
-			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 North"]
-		elseif In(pos2Section, 3,4,5) then
-			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 East"]
-		elseif In(pos2Section, 6,7,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 South"]
-		elseif In(pos2Section, 8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 West"]
-		end
-	elseif In(pos1Section, 2) then
-		if In(pos2Section, 1,6,18,17,16) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 South"]
-		elseif In(pos2Section, 3, 4, 5) then
-			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 East"]
-		elseif In(pos2Section, 8,9,10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 West"]
-		end
-	elseif In(pos1Section, 3) then
-		if In(pos2Section, 1,2,8,9,10,11,12) then
-			portalData = phaennaPortalPositions[3] and phaennaPortalPositions[3]["3 North"]
-		elseif In(pos2Section, 4,5,6,7,13,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
-			portalData = phaennaPortalPositions[3] and phaennaPortalPositions[3]["3 South"]
-		end
-	elseif In(pos1Section, 4) then
-		-- add 4 west
-		if In(pos2Section, 3,2,9) then
-			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 North"]
-		elseif In(pos2Section, 1,8,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
-			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 West"]
-		elseif In(pos2Section, 5,6,7,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 South"]
-		end
-	elseif In(pos1Section, 5) then
-		if In(pos2Section, 1,2,3,4,8,9,10,11,12) then
-			portalData = phaennaPortalPositions[5] and phaennaPortalPositions[5]["5 North"]
-		elseif In(pos2Section, 6,7,13,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[5] and phaennaPortalPositions[5]["5 West"]
-		end
-	elseif In(pos1Section, 6) then
-		if In(pos2Section, 1,2,3) then
-			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 North"]
-		elseif In(pos2Section, 4,5) then
-			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 East"]
-		elseif In(pos2Section, 7,8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 West"]
-		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 South"]
-		end
-	elseif In(pos1Section, 7) then
-		if In(pos2Section, 1,2,3,4,5,6) then
-			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 East"]
-		elseif In(pos2Section, 8,9,10,11,12) then
-			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 North"]
-		elseif In(pos2Section, 14,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
-			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 West"]
-		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 South"]
-		end
-	elseif In(pos1Section, 8) then
-		if In(pos2Section, 1,4,3,5) then
-			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 East"]
-		elseif In(pos2Section, 9,2) then
-			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 North"]
-		elseif In(pos2Section, 7,6,5,18,17,16,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 South"]
-		elseif In(pos2Section, 10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 West"]
-		end
-	elseif In(pos1Section, 9) then
-		if In(pos2Section, 1,2,3,4,5,6,7) then
-			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 East"]
-		elseif In(pos2Section, 8,7,6,18,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 South"]
-		elseif In(pos2Section, 10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 West"]
-		end
-	elseif In(pos1Section, 10) then
-		if In(pos2Section, 9,2,3) then
-			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 North"]
-		elseif In(pos2Section, 11,8,14,7,6,5,1,4,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 South East"]
-		elseif In(pos2Section, 12,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
-			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 South"]
-		end
-	elseif In(pos1Section, 11) then
-		if In(pos2Section, 10) then
-			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 North"]
-		elseif In(pos2Section, 14,15,16,17,7,18,13) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 South"]
-		elseif In(pos2Section, 8,1,4,3,5,6,7) then
-			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 East"]
-		elseif In(pos2Section, 12) then
-			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 West"]
-		end
-	elseif In(pos1Section, 12) then
-		if In(pos2Section, 10,9,2) then
-			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 North"]
-		elseif In(pos2Section, 13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 South"]
-		elseif In(pos2Section, 1,3,4,5,6,7,8,11,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 East"]
-		end
-	elseif In(pos1Section, 13) then
-		if In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 South"]
-		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12) then
-			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 West"]
-		elseif In(pos2Section, 14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 East"]
-		end
-	elseif In(pos1Section, 14) then
-		if In(pos2Section, 13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 West"]
-		elseif In(pos2Section, 1,2,3,4,5,6) then
-			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 North"]
-		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 South"]
-		elseif In(pos2Section, 7,8,9,10,11,12) then
-			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 East"]
-		end
-	elseif In(pos1Section, 15) then
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 North"]
-		elseif In(pos2Section, 16) then
-			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 South"]
-		elseif In(pos2Section, 17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 East"]
-		end
-	elseif In(pos1Section, 16) then
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[16] and phaennaPortalPositions[16]["16 North"]
-		elseif In(pos2Section, 17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[16] and phaennaPortalPositions[16]["16 East"]
-		end
-	elseif In(pos1Section, 17) then
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 North"]
-		elseif In(pos2Section, 16) then
-			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 South"]
-		elseif In(pos2Section, 12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 West"]
-		end
-	elseif In(pos1Section, 18) then
-		if In(pos2Section, 1,2,3,4,5,6,8,9,10,11,12) then
-			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 North"]
-		elseif In(pos2Section, 15,17,16) then
-			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 South"]
-		elseif In(pos2Section, 7,14,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 West"]
-		elseif In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 East"]
-		end
-	elseif In(pos1Section, 19) and ffxivminion.PhaennaMapVersion >= 9 then
-		-- Section 19 portals (requires version >= 9)
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,23,24) then
-			portalData = phaennaPortalPositions[19] and phaennaPortalPositions[19]["19 North"]
-		elseif In(pos2Section, 20,21,22) then
-			portalData = phaennaPortalPositions[19] and phaennaPortalPositions[19]["19 South"]
-		end
-	elseif In(pos1Section, 20) and ffxivminion.PhaennaMapVersion >= 9 then
-		if In(pos2Section, 21,22) then
-			portalData = phaennaPortalPositions[20] and phaennaPortalPositions[20]["20 West"]
-		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,23,24) then
-			portalData = phaennaPortalPositions[20] and phaennaPortalPositions[20]["20 East"]
-		end
-	elseif In(pos1Section, 21) and ffxivminion.PhaennaMapVersion >= 9 then
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,23,24) then
-			portalData = phaennaPortalPositions[21] and phaennaPortalPositions[21]["21 South"]
-		elseif In(pos2Section, 22) then
-			portalData = phaennaPortalPositions[21] and phaennaPortalPositions[21]["21 East"]
-		end
-	elseif In(pos1Section, 22) and ffxivminion.PhaennaMapVersion >= 9 then
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,23,24) then
-			portalData = phaennaPortalPositions[22] and phaennaPortalPositions[22]["22 West"]
-		end
-	elseif In(pos1Section, 23) and ffxivminion.PhaennaMapVersion >= 15 then
-		if In(pos2Section, 24) then
-			portalData = phaennaPortalPositions[23] and phaennaPortalPositions[23]["23 South"]
-		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22) then
-			portalData = phaennaPortalPositions[23] and phaennaPortalPositions[23]["23 North"]
-		end
-	elseif In(pos1Section, 24) and ffxivminion.PhaennaMapVersion >= 15 then
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23) then
-			portalData = phaennaPortalPositions[24] and phaennaPortalPositions[24]["24 North"]
-		end
-	end
-	
-	-- Check version requirements for portal
-	if portalData and portalData.requires then
-		if ffxivminion.PhaennaMapVersion < portalData.requires then
-			portalData = nil
-		end
-	end
-	
-	if not portalData then
-		return false
-	end
-	
-	local portalPos = portalData.pos
-	local distance = math.distance2d(pos1, portalPos)
-	
-	if distance > 2 then
-		return true, function()
-			local newTask = ffxiv_task_movetopos.Create()
-			newTask.pos = portalPos
-			ml_task_hub:CurrentTask():AddSubTask(newTask)
-		end
-	else
-		return true, function()
-			Player:SetFacing(portalData.facing)
-			Player:Move(FFXIV.MOVEMENT.FORWARD)
-		end
-	end
-end
-
 function Transport139(pos1,pos2)
 	local pos1 = pos1 or Player.pos
 	local pos2 = pos2
@@ -8880,16 +10456,6 @@ function Transport139(pos1,pos2)
 	
 	return false			
 end
-
--- Helper function to check if portal meets version requirements
-local function PortalMeetsVersion(portalData)
-	if not portalData then
-		return false
-	end
-	local requiredVersion = portalData.requires or 3
-	return ffxivminion.PhaennaMapVersion >= requiredVersion
-end
-
 
 function Transport156(pos1,pos2)
 	local pos1 = pos1 or Player.pos

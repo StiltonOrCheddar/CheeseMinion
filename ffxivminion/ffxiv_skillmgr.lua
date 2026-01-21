@@ -753,8 +753,8 @@ SkillMgr.Variables = {
 	SKM_M20ACTIONWAIT = { default = 100, cast = "number", profile = "m20actionwait", readable = "", section = "fighting" },
 	SKM_M20ACTIONMSG = { default = "", cast = "string", profile = "m20actionmsg", readable = "", section = "fighting" },
 	SKM_M20ACTIONCOMPLETE = { default = "", cast = "string", profile = "m20actioncomplete", readable = "", section = "fighting" },
-	]]
-	
+    ]]
+
 	-- Buff Vars.
 	--SKM_B1TARGET = { default = GetString("Target"), cast = "string", profile = "b1target", readable = "", section = "fighting" },
 	--SKM_B1QUALIFIER = { default = "HasBuff", cast = "string", profile = "b1qualifier", readable = "", section = "fighting" },
@@ -876,7 +876,6 @@ for i = 1, 20 do
     SkillMgr.Variables["SKM_M"..i.."ACTIONMSG"] = { default = "", cast = "string", profile = "m"..i.."actionmsg", readable = "", section = "fighting" }
     SkillMgr.Variables["SKM_M"..i.."ACTIONCOMPLETE"] = { default = "", cast = "string", profile = "m"..i.."actioncomplete", readable = "", section = "fighting" }
 end
-
 
 SkillMgr.UpdateDefaultProfiles()
 
@@ -1035,7 +1034,7 @@ function SkillMgr.ModuleInit()
 	gSMTargets = { GetString("Target"),GetString("Ground Target"),GetString("Player"),GetString("Cast Target"),GetString("Party"),GetString("PartyS"),GetString("Low TP"),GetString("Low MP"),GetString("Pet"),GetString("Ally"),GetString("Tank"),GetString("Tankable Target"),GetString("Tanked Target"),GetString("Heal Priority"),GetString("Dead Ally"),GetString("Dead Party") }
 	gSMTarget = 1
 	
-	gSMTargetTypes = { GetString("Any"),GetString("Tank"),GetString("DPS"),GetString("Caster"),GetString("Healer"),GetString("RangeDPS"),GetString("MeleeDPS"),GetString("MagicalRangedDPS"),GetString("PhysicalRangedDPS") }
+	gSMTargetTypes = { GetString("Any"),GetString("Tank"),GetString("DPS"),GetString("Caster"),GetString("Healer"),GetString("Ranged DPS"),GetString("Melee DPS"),GetString("Physical Ranged DPS"),GetString("Magical Ranged DPS") }
 	gSMTargetType = 1
 	
 	gSMPlayerTargets = { GetString("Any"),GetString("Enemy"),GetString("Player") }
@@ -1136,6 +1135,136 @@ function GetVersion()
 	else
 		return 64
 	end
+end
+
+-- [[  PRECAST DEPENDANCIES  ]] 
+-- Self-only actions map (useful for cast target override)
+SkillMgr.SELF_ONLY = SkillMgr.SELF_ONLY or {
+  [24290] = true, -- Eukrasia
+}
+
+-- Precast dependency registry: key = action that requires a precast, value = precast details
+-- precastTarget: "self" or "target" (where to cast the precast)
+-- stickMs: intended target stickiness window for the follow-up
+-- buffId: status that indicates precast is already primed (Eukrasia = 2606)
+SkillMgr.PRECAST_DEPS = SkillMgr.PRECAST_DEPS or {
+  -- Eukrasia morphs
+  [24291] = { pre = 24290, precastTarget = "self", stickMs = 2500, buffId = 2606 }, -- Eukrasian Diagnosis
+  [24292] = { pre = 24290, precastTarget = "self", stickMs = 2500, buffId = 2606 }, -- Eukrasian Prognosis
+  [24293] = { pre = 24290, precastTarget = "self", stickMs = 2500, buffId = 2606 }, -- Eukrasian Dosis
+  [24308] = { pre = 24290, precastTarget = "self", stickMs = 2500, buffId = 2606 }, -- Eukrasian Dosis II
+  [24314] = { pre = 24290, precastTarget = "self", stickMs = 2500, buffId = 2606 }, -- Eukrasian Dosis III
+  [37032] = { pre = 24290, precastTarget = "self", stickMs = 2500, buffId = 2606 }, -- Eukrasian Dyskrasia
+  [37034] = { pre = 24290, precastTarget = "self", stickMs = 2500, buffId = 2606 }, -- Eukrasian Prognosis II
+}
+
+function SkillMgr.RegisterPrecastDeps(deps)
+  SkillMgr.PRECAST_DEPS = SkillMgr.PRECAST_DEPS or {}
+  for k,v in pairs(deps or {}) do
+    SkillMgr.PRECAST_DEPS[k] = v
+  end
+end
+
+function SkillMgr.NeedsPrecast(skillId)
+  local dep = skillId and SkillMgr.PRECAST_DEPS[tonumber(skillId)]
+  return dep ~= nil, dep
+end
+
+-- Short primed fallback window to bridge server tick between Eukrasia cast and buff registration
+SkillMgr.PRIME_STATE = SkillMgr.PRIME_STATE or {}
+
+local function isBuffPrimed(dep)
+  -- Uses your global HasBuff helper
+  return dep and dep.buffId and HasBuff and HasBuff(Player.id, dep.buffId) or false
+end
+
+local function isPrimed(dep)
+  if not dep then return false end
+  if isBuffPrimed(dep) then return true end
+  local exp = SkillMgr.PRIME_STATE[dep.pre]
+  return exp and (Now() <= exp) or false
+end
+
+-- ReadyCheck helper: allow the post-precast action through if the precast is primed (buff or fallback) or the precast is ready
+function SkillMgr.ShouldBypassReadyCheck(skillId)
+  local needs, dep = SkillMgr.NeedsPrecast(skillId)
+  if not needs then return false end
+
+  if isPrimed(dep) then
+    return true
+  end
+
+  local pre = SkillMgr.GetAction(dep.pre, 1)
+  return (pre and pre:IsReady(Player.id)) or false
+end
+
+-- Cast helper: primes the precast and sticks the intended target; returns true if it casted the precast
+function SkillMgr.TryHandlePrecast(skillId, intendedTID, prio)
+	local now = Now()
+	local needs, dep = SkillMgr.NeedsPrecast(skillId)
+	if not needs then return false end
+
+	-- If already primed (buff active or within short window), don't re-cast; just re-stick target and let morph proceed.
+	if isPrimed(dep) then
+		local stickMs = dep.stickMs or 2500
+		SkillMgr.throw = SkillMgr.throw or {}
+		SkillMgr.throw[dep.pre] = { expiration = now + stickMs, targetid = intendedTID, prio = prio }
+		SkillMgr.throw[skillId] = { expiration = now + stickMs, targetid = intendedTID, prio = prio }
+		return false
+	end
+
+	local preAction = SkillMgr.GetAction(dep.pre, 1)
+	if not preAction then return false end
+
+	-- Avoid re-priming spam only until the action is realistically ready again
+	local guardMs = math.max(0, ((preAction.recasttime or 1.0) * 1000) - 50)
+	if SkillMgr.prevSkillID == dep.pre and ((now - (SkillMgr.prevSkillTimestamp or 0)) < guardMs) then
+		return false
+	end
+
+	local castTID = (dep.precastTarget == "self") and Player.id or intendedTID
+	if preAction:Cast(castTID) then
+		SkillMgr.latencyTimer = now
+
+		-- Short internal prime window to bridge buff propagation race
+		local primeMs = 1500
+		SkillMgr.PRIME_STATE[dep.pre] = now + primeMs
+
+		-- Stick the intended party target for the follow-up window (both under pre and post action ids)
+		local stickMs = dep.stickMs or 2500
+		SkillMgr.throw = SkillMgr.throw or {}
+		SkillMgr.throw[dep.pre] = { expiration = now + stickMs, targetid = intendedTID, prio = prio }
+		SkillMgr.throw[skillId] = { expiration = now + stickMs, targetid = intendedTID, prio = prio }
+
+		-- Update state using the actual last cast (handles morphing)
+		local castingskill = Player.castinginfo.lastcastid or 0
+		if castingskill ~= 0 then
+			local castedAction = SkillMgr.GetAction(castingskill, 1)
+			SkillMgr.prevSkillID = castingskill
+			SkillMgr.prevSkillTimestamp = now
+			local recastToCheck = (castedAction and castedAction.recasttime) or preAction.recasttime or 0
+			local isEukrasia = (castingskill == 24290)
+		if (not isEukrasia) and (math.abs((SkillMgr.gcdTime or 0) - recastToCheck) <= 0.1) then
+			SkillMgr.prevGCDSkillID = castingskill
+		end
+		
+		SkillMgr.UpdateLastCast(castingskill)
+		if SkillMgr.UpdateChain(prio, castingskill) then
+			SkillMgr.queuedPrio = 0
+		end
+			-- Do NOT arm a long stall from precast; clear immediately.
+			SkillMgr.failTimer = now
+		else
+			-- Instant-cast race: record precast as previous and clear stall
+			SkillMgr.prevSkillID = dep.pre
+			SkillMgr.prevSkillTimestamp = now
+			SkillMgr.failTimer = now
+		end
+
+		return true
+	end
+
+	return false
 end
 
 function SkillMgr.GetAction(actionid,actiontype,target)
@@ -1421,6 +1550,7 @@ SkillMgr.macroCasted = false
 SkillMgr.macroAttempts = 0
 SkillMgr.failTimer = 0
 SkillMgr.recastTimer = 0
+
 function SkillMgr.ParseMacro(data)
 	SkillMgr.receivedMacro = {}
 	
@@ -2946,198 +3076,189 @@ function SkillMgr.GetTankedTarget( range )
 	return nil
 end
 
-function SkillMgr.Cast( entity , preCombat, forceStop )
-	preCombat = IsNull(preCombat,false)
-	forceStop = IsNull(forceStop,false)
-	
-	if (SkillMgr.IsYielding()) then
-		return false
-	end
-	
-	SkillMgr.CheckMonitor()
-	
-	if (not entity or IsFlying() or table.valid(SkillMgr.receivedMacro)) then
-		return false
-	end
-	
-	--This call is here to refresh the action list in case new skills are equipped.
-	if (SkillMgr.SkillProfile) then
-		
-		local testSkill = SkillMgr.GetAction(SkillMgr.GCDSkills[Player.job],1)
-		local testSkillPVP = SkillMgr.GetAction(SkillMgr.GCDSkillsPVP[Player.job],1)
-		if (testSkill) then
-			SkillMgr.gcdTime = testSkill.recasttime
-		elseif (testSkillPVP) then
-			SkillMgr.gcdTime = testSkillPVP.recasttime
-		end
-	
-		-- Start Main Loop
-		local casted = false
-		for prio,skill in pairsByKeys(SkillMgr.SkillProfile) do
-			
-			if (skill.stype == "Macro" or skill.stype == "Action") then
-				local result = SkillMgr.CanCast(prio, entity, preCombat)
-				if (result ~= 0) then
-					local TID = result
-					
-					if (skill.stype == "Macro") then
-						local macro = {}
-						
-						for i=1,20 do
-							local mid = skill["m"..tostring(i).."actionid"]
-							if (tonumber(mid) and tonumber(mid) ~= 0) then
-							
-								local mtargetfunc = skill["m"..tostring(i).."actiontarget"]
-								local mtargetmsg = skill["m"..tostring(i).."actionmsg"] or ""
-								local mtargetcomplete = skill["m"..tostring(i).."actioncomplete"] or ""
-								
-								local instruction = { "Action", {mid, 1, mtargetfunc, mtargetmsg, mtargetcomplete }}
-								local mwait = tonumber(skill["m"..tostring(i).."actionwait"]) or 100
-								local waitInstruction = { "Wait", { mwait }}
-								table.insert(macro,instruction)
-								table.insert(macro,waitInstruction)
-							else
-								break
-							end
-						end
-						
-						SkillMgr.ParseMacro(macro)
-						
-						casted = true
-						break
-						
-					elseif (skill.stype == "Action") then
-						if (skill.trg == GetString("Ground Target")) then
-						
-							local action = SkillMgr.GetAction(skill.id,1)
-							local entity = MGetEntity(TID)
-							local tpos = entity.pos
-							if (entity) then
-								if (action:Cast(tpos.x, tpos.y, tpos.z)) then
-									SkillMgr.latencyTimer = Now()
-									
-									local castingskill = Player.castinginfo.lastcastid
-									if (castingskill == action.id or (IsNinjutsuSkill(castingskill) and IsNinjutsuSkill(action.id))) then
-										SkillMgr.prevSkillID = castingskill
-										SkillMgr.prevSkillTimestamp = Now()
-										if (math.abs(SkillMgr.gcdTime - action.recasttime) <= .1) then
-											SkillMgr.prevGCDSkillID = castingskill
-										end
-										SkillMgr.UpdateLastCast(castingskill)
-										if (SkillMgr.UpdateChain(prio,castingskill)) then
-											SkillMgr.queuedPrio = 0
-										end
-										SkillMgr.failTimer = Now() + 6000
-									else
-										if (skill.chainstart  or skill.chainend ) then
-											SkillMgr.queuedPrio = prio
-										end
-									end
-									
-									casted = true
-									break
-								end
-							end
-						else
-							local action = SkillMgr.GetAction(skill.id,1)
-							local entity = MGetEntity(TID)
-							
-							if (table.valid(action)) then
-								--d("Attempting to cast skill ["..tostring(prio).."]:"..tostring(action.name).." on "..tostring(entity.name))
-								--if (gSkillManagerQueueing ) then
-									--SkillMgr.DebugOutput(prio, "Attempting to cast skill:"..tostring(action.name))
-								--end
-								--if (ActionList:Cast(skill.id,TID,1)) then
-								if (action:Cast(TID)) then
-									SkillMgr.latencyTimer = Now()
-									
-									-- If we want to try the unique last cast, throw it to the stack.
-									if (IsNull(tonumber(skill.secspassedu),0) > 0) then
-										SkillMgr.throw[action.id] = { 
-											expiration = Now() + 2500,  
-											targetid = TID,
-											prio = prio,
-										}
-									end
-								
-									local castingskill = Player.castinginfo.lastcastid
-									if (castingskill == action.id or (IsNinjutsuSkill(castingskill) and IsNinjutsuSkill(action.id))) then
-										--d(tostring(action.name).." was detected immediately.")
-										--d("Setting previous skill ID to :"..tostring(castingskill).."["..action.name.."]")
-										SkillMgr.prevSkillID = castingskill
-										SkillMgr.prevSkillTimestamp = Now()
-										if (math.abs(SkillMgr.gcdTime - action.recasttime) <= .1) then
-											SkillMgr.prevGCDSkillID = castingskill
-										end
-										SkillMgr.UpdateLastCast(castingskill)
-										if (SkillMgr.UpdateChain(prio,castingskill)) then
-											SkillMgr.queuedPrio = 0
-										end
-										SkillMgr.failTimer = Now() + 6000
-									else
-										if (skill.chainstart or skill.chainend ) then
-											SkillMgr.queuedPrio = prio
-										end
-									end
-									
-									casted = true
-									break
-								--else
-									--if (gSkillManagerQueueing ) then
-										--SkillMgr.DebugOutput(prio, "Skill failed to cast.")
-									--end
-								end
-							end
-						end
-					end
-					
-					break
-				end
-			end
-		end
-		-- End Main Loop
-		
-		-- Start Pet Loop
-		for prio,skill in pairsByKeys(SkillMgr.SkillProfile) do
-			if (skill.stype == GetString("Pet")) then	
-			
-				local result = SkillMgr.CanCast(prio, entity, preCombat)
-				if (result ~= 0) then
-					local TID = result
-					
-					if (skill.trg == GetString("Ground Target")) then
-					
-						local s = SkillMgr.GetAction(skill.id,11)
-						local entity = MGetEntity(TID)
-						
-						if (entity) then
-							local tpos = entity.pos							
-							if (s:Cast(tpos.x, tpos.y, tpos.z)) then
-								if (SkillMgr.SkillProfile[prio]) then
-									SkillMgr.SkillProfile[prio].lastcast = Now()
-								else
-									d("An error occurred setting last cast.  Priority " .. prio .. " seems to be missing.")
-								end
-							end
-						end
-					else
-						local s = SkillMgr.GetAction(skill.id,11)
-						SkillMgr.DebugOutput(prio, "Grabbed pet skill:"..tostring(s.name).." to cast on target ID :"..tostring(TID))
-						if (s:Cast(TID)) then
-							if (SkillMgr.SkillProfile[prio]) then
-								SkillMgr.SkillProfile[prio].lastcast = Now()
-							else
-								d("An error occurred setting last cast.  Priority " .. prio .. " seems to be missing.")
-							end
-						end
-					end
-				end
-			end
-		end		
-		
-		return casted
-		-- End Pet Loop
-	end
+function SkillMgr.Cast(entity, preCombat, forceStop)
+  preCombat = IsNull(preCombat, false)
+  forceStop = IsNull(forceStop, false)
+
+  if (SkillMgr.IsYielding()) then
+    return false
+  end
+
+  SkillMgr.CheckMonitor()
+
+  if (not entity or IsFlying() or table.valid(SkillMgr.receivedMacro)) then
+    return false
+  end
+
+  -- Refresh GCD
+  if (SkillMgr.SkillProfile) then
+    local testSkill = SkillMgr.GetAction(SkillMgr.GCDSkills[Player.job], 1)
+    local testSkillPVP = SkillMgr.GetAction(SkillMgr.GCDSkillsPVP[Player.job], 1)
+    if (testSkill) then
+      SkillMgr.gcdTime = testSkill.recasttime
+    elseif (testSkillPVP) then
+      SkillMgr.gcdTime = testSkillPVP.recasttime
+    end
+
+    local casted = false
+    for prio, skill in pairsByKeys(SkillMgr.SkillProfile) do
+      if (skill.stype == "Macro" or skill.stype == "Action") then
+        local result = SkillMgr.CanCast(prio, entity, preCombat)
+        if (result ~= 0) then
+          local TID = result
+
+          if (skill.stype == "Macro") then
+            local macro = {}
+            for i = 1, 20 do
+              local mid = skill["m" .. tostring(i) .. "actionid"]
+              if (tonumber(mid) and tonumber(mid) ~= 0) then
+                local mtargetfunc = skill["m" .. tostring(i) .. "actiontarget"]
+                local mtargetmsg = skill["m" .. tostring(i) .. "actionmsg"] or ""
+                local mtargetcomplete = skill["m" .. tostring(i) .. "actioncomplete"] or ""
+                local instruction = { "Action", { mid, 1, mtargetfunc, mtargetmsg, mtargetcomplete } }
+                local mwait = tonumber(skill["m" .. tostring(i) .. "actionwait"]) or 100
+                local waitInstruction = { "Wait", { mwait } }
+                table.insert(macro, instruction)
+                table.insert(macro, waitInstruction)
+              else
+                break
+              end
+            end
+            SkillMgr.ParseMacro(macro)
+            casted = true
+            break
+
+          elseif (skill.stype == "Action") then
+            if (skill.trg == GetString("Ground Target")) then
+              local action = SkillMgr.GetAction(skill.id, 1)
+              local tgtEnt = MGetEntity(TID)
+              local tpos = tgtEnt and tgtEnt.pos
+              if (tgtEnt and tpos and action) then
+                if (action:Cast(tpos.x, tpos.y, tpos.z)) then
+                  SkillMgr.latencyTimer = Now()
+
+                  local castingskill = Player.castinginfo.lastcastid or 0
+                  if (castingskill ~= 0) then
+                    local castedAction = SkillMgr.GetAction(castingskill, 1)
+                    SkillMgr.prevSkillID = castingskill
+                    SkillMgr.prevSkillTimestamp = Now()
+
+                    local recastToCheck = (castedAction and castedAction.recasttime) or action.recasttime or 0
+                    if (math.abs((SkillMgr.gcdTime or 0) - recastToCheck) <= 0.1) then
+                      SkillMgr.prevGCDSkillID = castingskill
+                    end
+                    SkillMgr.UpdateLastCast(castingskill)
+                    if (SkillMgr.UpdateChain and SkillMgr.UpdateChain(prio, castingskill)) then
+                      SkillMgr.queuedPrio = 0
+                    end
+                    SkillMgr.failTimer = Now() + 6000
+                  else
+                    if (skill.chainstart or skill.chainend) then
+                      SkillMgr.queuedPrio = prio
+                    end
+                  end
+
+                  casted = true
+                  break
+                end
+              end
+            else
+              local action = SkillMgr.GetAction(skill.id, 1)
+              if (not action) then break end
+
+              -- 1) Generic precast hook (handles all reliant precasts defined in PRECAST_DEPS)
+              local intendedTID = TID
+              if SkillMgr.TryHandlePrecast and SkillMgr.TryHandlePrecast(action.id, intendedTID, prio) then
+                casted = true
+                break
+              end
+
+              -- 2) Self-only override (use registry)
+              local isSelfOnly = SkillMgr.SELF_ONLY and SkillMgr.SELF_ONLY[action.id] or false
+              local castTID = isSelfOnly and Player.id or TID
+
+              if (action:Cast(castTID)) then
+                SkillMgr.latencyTimer = Now()
+
+                -- Keep intended target sticky for follow-up (for self-only primes or when profile asks)
+                local wantsStick = (IsNull(tonumber(skill.secspassedu), 0) > 0) or isSelfOnly
+                if (wantsStick) then
+                  SkillMgr.throw[action.id] = {
+                    expiration = Now() + 2500,
+                    targetid = intendedTID,
+                    prio = prio,
+                  }
+                end
+
+                -- 3) Use actual lastcastid to update state (handles morphing/procs globally)
+                local castingskill = Player.castinginfo.lastcastid or 0
+                if (castingskill ~= 0) then
+                  local castedAction = SkillMgr.GetAction(castingskill, 1)
+                  SkillMgr.prevSkillID = castingskill
+                  SkillMgr.prevSkillTimestamp = Now()
+
+                  local recastToCheck = (castedAction and castedAction.recasttime) or action.recasttime or 0
+                  if (math.abs((SkillMgr.gcdTime or 0) - recastToCheck) <= 0.1) then
+                    SkillMgr.prevGCDSkillID = castingskill
+                  end
+                  SkillMgr.UpdateLastCast(castingskill)
+                  if (SkillMgr.UpdateChain and SkillMgr.UpdateChain(prio, castingskill)) then
+                    SkillMgr.queuedPrio = 0
+                  end
+                  SkillMgr.failTimer = Now() + 6000
+                else
+                  if (skill.chainstart or skill.chainend) then
+                    SkillMgr.queuedPrio = prio
+                  end
+                end
+
+                casted = true
+                break
+              end
+            end
+          end
+
+          break
+        end
+      end
+    end
+
+    -- Pet Loop unchanged
+    for prio,skill in pairsByKeys(SkillMgr.SkillProfile) do
+      if (skill.stype == GetString("Pet")) then
+        local result = SkillMgr.CanCast(prio, entity, preCombat)
+        if (result ~= 0) then
+          local TID = result
+          if (skill.trg == GetString("Ground Target")) then
+            local s = SkillMgr.GetAction(skill.id,11)
+            local tgtEnt = MGetEntity(TID)
+            if (tgtEnt) then
+              local tpos = tgtEnt.pos
+              if (s:Cast(tpos.x, tpos.y, tpos.z)) then
+                if (SkillMgr.SkillProfile[prio]) then
+                  SkillMgr.SkillProfile[prio].lastcast = Now()
+                else
+                  d("An error occurred setting last cast.  Priority " .. prio .. " seems to be missing.")
+                end
+              end
+            end
+          else
+            local s = SkillMgr.GetAction(skill.id,11)
+            SkillMgr.DebugOutput(prio, "Grabbed pet skill:"..tostring(s.name).." to cast on target ID :"..tostring(TID))
+            if (s:Cast(TID)) then
+              if (SkillMgr.SkillProfile[prio]) then
+                SkillMgr.SkillProfile[prio].lastcast = Now()
+              else
+                d("An error occurred setting last cast.  Priority " .. prio .. " seems to be missing.")
+              end
+            end
+          end
+        end
+      end
+    end
+
+    return casted
+  end
 end
 
 SkillMgr.MatchingCraftSkills = {
@@ -3986,30 +4107,106 @@ function SkillMgr.DebugOutput( prio, message )
 	end
 end
 
+-- Helper for picking correct party/trust target matching trgtype
+local function GetPartyOrTrustTargetWithRole(skill, maxrange, isSelfAllowed)
+    local trgtype = skill.trgtype
+    local roleString = trgtype and trgtype ~= GetString("Any") and trgtype or nil
+
+    -- Collect all party and trust members in range
+    local partylist = MEntityList("myparty,alive,targetable,chartype=4,maxdistance2d="..tostring(maxrange))
+    local trustlist = MEntityList("alive,targetable,chartype=9,maxdistance2d="..tostring(maxrange))
+    local candidates = {}
+
+    if table.valid(partylist) then for _,v in pairs(partylist) do table.insert(candidates, v) end end
+    if table.valid(trustlist) then for _,v in pairs(trustlist) do table.insert(candidates, v) end end
+    if isSelfAllowed and Player and Player.alive and Player.targetable then
+        table.insert(candidates, Player)
+    end
+
+    -- Buff/debuff filters
+    local ptbuff      = not IsNullString(skill.ptbuff) and skill.ptbuff or nil
+    local ptnbuff     = not IsNullString(skill.ptnbuff) and skill.ptnbuff or nil
+    local debuffCheck = skill.ptkbuff and SkillMgr.knownDebuffs or nil
+
+    local tbuff       = not IsNullString(skill.tbuff) and skill.tbuff or nil
+    local tnbuff      = not IsNullString(skill.tnbuff) and skill.tnbuff or nil
+    local tbuffowner  = (skill.tbuffowner == GetString("Player")) and Player.id or nil
+    local tbuffdura   = tonumber(skill.tbuffdura) or 0
+    local tnbuffowner = (skill.tnbuffowner == GetString("Player")) and Player.id or nil
+    local tnbuffdura  = tonumber(skill.tnbuffdura) or 0
+
+    local bestTarget = nil
+    local lowestHP = 101 -- percent, 0–100 range
+
+    for _, entity in ipairs(candidates) do
+        local isValid = true
+
+        -- Role filter
+        if roleString and not IsJobRole(entity, roleString) then
+            isValid = false
+        end
+
+        -- Buff/debuff logic
+        if isValid then
+            if debuffCheck and not MissingBuffs(entity, debuffCheck) then isValid = false end
+            if ptbuff and not HasBuffs(entity, ptbuff) then isValid = false end
+            if ptnbuff and not MissingBuffs(entity, ptnbuff) then isValid = false end
+            if tbuff and not HasBuffs(entity, tbuff, tbuffdura, tbuffowner) then isValid = false end
+            if tnbuff and not MissingBuffs(entity, tnbuff, tnbuffdura, tnbuffowner) then isValid = false end
+        end
+
+        -- Lowest HP logic
+        if isValid and entity.hp and entity.hp.percent and entity.hp.percent < lowestHP then
+            bestTarget = entity
+            lowestHP = entity.hp.percent
+        end
+    end
+
+    return bestTarget
+end
+
 -- Need to return a table containing the target, the cast TID, and the buffs table for the target.
 function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 	if (not skill or not entity) then
 		return nil
 	end
-	
+
+	-- Normalize 'entity': it may be an entity table or a numeric ID
+	local target = nil
+	local TID = 0
+	if type(entity) == "number" then
+		TID = entity
+		target = EntityList:Get(entity)
+	elseif type(entity) == "table" then
+		target = entity
+		TID = tonumber(entity.id) or 0
+	else
+		return nil
+	end
+
 	local PID = Player.id
 	local pet = Player.pet
-	local target = entity
-	local TID = entity.id
+
+	-- Parse range (no additional clamping here)
 	local maxrange = tonumber(maxrange) or 0
-	
+
 	local targetTable = {}
-	
+
 	local skillid = tonumber(skill.id) or 0
 	if (skillid == 0) then
 		d("There is a problem with the skill ID for : "..tostring(skill.name))
 		return nil
 	end
-	
+
 	if (skill.trg == GetString("Target")) then
+		-- Guard: if target isn't a valid entity (e.g. numeric ID not found), bail out
+		if (not table.valid(target)) then
+			return nil
+		end
 		if (target.id == Player.id) then
 			return nil
 		end
+
 	elseif ( skill.trg == GetString("Tankable Target")) then
 		local newtarget = SkillMgr.GetTankableTarget(maxrange)
 		if (newtarget) then
@@ -4037,7 +4234,7 @@ function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 				end
 			end
 		else
-			if ( SkillMgr.IsPetSummonSkill(skillid) and (SkillMgr.IsPetSummonActive(skillid) or SkillMgr.IsSummoningPet())) then 
+			if ( SkillMgr.IsPetSummonSkill(skillid) and (SkillMgr.IsPetSummonActive(skillid) or SkillMgr.IsSummoningPet())) then
 				return nil
 			else
 				valid = true
@@ -4047,63 +4244,21 @@ function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 		if (not valid) then
 			return nil
 		end
-	elseif ( skill.trg == GetString("Party") ) then
-		if ( not IsNullString(skill.ptbuff) or not IsNullString(skill.ptnbuff)) then
-			local newtarget = MPartyMemberWithBuff(skill.ptbuff, skill.ptnbuff, maxrange)
-			if (newtarget) then
-				target = newtarget
-				TID = newtarget.id
-			 else
-				return nil
-			end
-		elseif (skill.ptkbuff ) then
-			local newtarget = MPartyMemberWithBuff(SkillMgr.knownDebuffs, skill.ptnbuff, maxrange)
-			if (newtarget) then
-				target = newtarget
-				TID = newtarget.id
-			 else
-				return nil
-			end
+	elseif (skill.trg == GetString("Party")) then
+		local newtarget = GetPartyOrTrustTargetWithRole(skill, maxrange, false)
+		if newtarget then
+			target = newtarget
+			TID = newtarget.id
 		else
-			local ally = nil
-			if ( skill.npc  ) then
-				ally = MGetBestPartyHealTarget( true, maxrange )
-			else
-				ally = MGetBestPartyHealTarget( false, maxrange )
-			end
-			
-			if ( ally ) then
-				target = ally
-				TID = ally.id
-			else
-				return nil
-			end
+			return nil
 		end
-	elseif ( skill.trg == GetString("PartyS") ) then
-		if (not IsNullString(skill.ptbuff) or not IsNullString(skill.ptnbuff)) then
-			local newtarget = MPartySMemberWithBuff(skill.ptbuff, skill.ptnbuff, maxrange)
-			if (newtarget) then
-				target = newtarget
-				TID = newtarget.id
-			else
-				return nil
-			end
-		elseif (skill.ptkbuff ) then
-			local newtarget = MPartySMemberWithBuff(SkillMgr.knownDebuffs, skill.ptnbuff, maxrange)
-			if (newtarget) then
-				target = newtarget
-				TID = newtarget.id
-			else
-				return nil
-			end
+	elseif (skill.trg == GetString("PartyS")) then
+		local newtarget = GetPartyOrTrustTargetWithRole(skill, maxrange, true)
+		if newtarget then
+			target = newtarget
+			TID = newtarget.id
 		else
-			local ally = GetLowestHPParty( skill )
-			if ( ally ) then
-				target = ally
-				TID = ally.id
-			else
-				return nil
-			end
+			return nil
 		end
 	elseif ( skill.trg == GetString("Tank") ) then
 		local ally = MGetBestTankHealTarget( maxrange )
@@ -4120,11 +4275,11 @@ function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 		else
 			ally = MGetBestHealTarget( false, maxrange )
 		end
-		
+
 		if ( ally and ally.id ~= PID) then
 			target = ally
 			TID = ally.id
-		end	
+		end
 	elseif ( skill.trg == GetString("Dead Party") or skill.trg == GetString("Dead Ally")) then
 		local ally = nil
 		if (skill.trg == GetString("Dead Party")) then
@@ -4134,8 +4289,8 @@ function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 			if (ally) then
 				d("Dead ally: ["..tostring(ally.name).."].")
 			end
-		end 
-		
+		end
+
 		if ( ally and ally.id ~= PID ) then
 			if SkillMgr.IsReviveSkill(skillid) then
 				target = ally
@@ -4147,8 +4302,9 @@ function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 			return nil
 		end
 	elseif ( skill.trg == GetString("Casting Target") ) then
-		local ci = entity.castinginfo
-		if ( ci ) then
+		-- Use the normalized target instead of 'entity'
+		local ci = (type(target) == "table") and target.castinginfo or nil
+		if ( ci and ci.channeltargetid and ci.channeltargetid ~= 0 ) then
 			target = EntityList:Get(ci.channeltargetid)
 			TID = ci.channeltargetid
 		else
@@ -4195,9 +4351,9 @@ function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 			[3] = skill.hprio3,
 			[4] = skill.hprio4,
 		}
-		
+
 		local requiredHP = tonumber(skill.hpriohp)
-		
+
 		local healTargets = {}
 		healTargets[GetString("Self")] = Player
 		healTargets[GetString("Tank")] = MGetBestTankHealTarget( maxrange )
@@ -4205,38 +4361,38 @@ function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 			healTargets[GetString("Party")] = MGetBestPartyHealTarget( true, maxrange )
 			healTargets[GetString("Any")] = MGetBestHealTarget( true, maxrange, requiredHP )
 		else
-			healTargets[GetString("Party")] = MGetBestPartyHealTarget( false, maxrange )
-			healTargets[GetString("Any")] = MGetBestHealTarget( false, maxrange, requiredHP ) 
+			healTargets[GetString("Party")] = GetPartyOrTrustTargetWithRole(skill, maxrange, true)
+			healTargets[GetString("Any")] = MGetBestHealTarget( false, maxrange, requiredHP )
 		end
-		
+
 		SkillMgr.DebugOutput( skill.prio, "Heal Priority: [Self] Contains : "..(healTargets[GetString("Self")] and healTargets[GetString("Self")].name or "nil")..".")
 		SkillMgr.DebugOutput( skill.prio, "Heal Priority: [Tank] Contains : "..(healTargets[GetString("Tank")] and healTargets[GetString("Tank")].name or "nil")..".")
 		SkillMgr.DebugOutput( skill.prio, "Heal Priority: [Party] Contains : "..(healTargets[GetString("Party")] and healTargets[GetString("Party")].name or "nil")..".")
 		SkillMgr.DebugOutput( skill.prio, "Heal Priority: [Any] Contains : "..(healTargets[GetString("Any")] and healTargets[GetString("Any")].name or "nil")..".")
-		
+
 		local ally = nil
 		for i,trgstring in ipairs(priorities) do
 			if (healTargets[trgstring]) then
 				local htarget = healTargets[trgstring]
 				if (tonumber(skill.hpriohp) > htarget.hp.percent) then
-					
+
 					local buffCheckPassed = true
 					if (not IsNullString(skill.tbuff)) then
 						local owner = (skill.tbuffowner == GetString("Player")) and PID or nil
 						local duration = tonumber(skill.tbuffdura) or 0
-						if not HasBuffs(htarget, skill.tbuff, duration, owner) then 
+						if not HasBuffs(htarget, skill.tbuff, duration, owner) then
 							buffCheckPassed = false
-						end 
+						end
 					end
-					
+
 					if (not IsNullString(skill.tnbuff)) then
 						local owner = (skill.tnbuffowner == GetString("Player")) and PID or nil
 						local duration = tonumber(skill.tnbuffdura) or 0
-						if not MissingBuffs(htarget, skill.tnbuff, duration, owner) then 
+						if not MissingBuffs(htarget, skill.tnbuff, duration, owner) then
 							buffCheckPassed = false
-						end 
-					end	
-					
+						end
+					end
+
 					if (buffCheckPassed) then
 						ally = htarget
 					end
@@ -4246,7 +4402,7 @@ function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 				break
 			end
 		end
-		
+
 		if ( ally ) then
 			SkillMgr.DebugOutput( skill.prio, "Heal Priority: Target Selection : "..ally.name)
 			target = ally
@@ -4256,13 +4412,13 @@ function SkillMgr.GetSkillTarget(skill, entity, maxrange)
 			return nil
 		end
 	end
-	
+
 	if (table.valid(target) and TID ~= 0) then
 		targetTable.target = target
 		targetTable.TID = TID
 		return targetTable
 	end
-	
+
 	return nil
 end
 
@@ -4317,63 +4473,21 @@ function SkillMgr.GetMacroTarget(skill, entity, maxrange)
 		else
 			TID = PID
 		end
-	elseif ( skill.trg == GetString("Party") ) then
-		if ( not IsNullString(skill.ptbuff) or not IsNullString(skill.ptnbuff)) then
-			local newtarget = MPartyMemberWithBuff(skill.ptbuff, skill.ptnbuff, maxrange)
-			if (newtarget) then
-				target = newtarget
-				TID = newtarget.id
-			 else
-				return nil
-			end
-		elseif (skill.ptkbuff ) then
-			local newtarget = MPartyMemberWithBuff(SkillMgr.knownDebuffs, skill.ptnbuff, maxrange)
-			if (newtarget) then
-				target = newtarget
-				TID = newtarget.id
-			 else
-				return nil
-			end
+	elseif (skill.trg == GetString("Party")) then
+		local newtarget = GetPartyOrTrustTargetWithRole(skill, maxrange, false)
+		if newtarget then
+			target = newtarget
+			TID = newtarget.id
 		else
-			local ally = nil
-			if ( skill.npc  ) then
-				ally = MGetBestPartyHealTarget( true, maxrange )
-			else
-				ally = MGetBestPartyHealTarget( false, maxrange )
-			end
-			
-			if ( ally ) then
-				target = ally
-				TID = ally.id
-			else
-				return nil
-			end
+			return nil
 		end
-	elseif ( skill.trg == GetString("PartyS") ) then
-		if (not IsNullString(skill.ptbuff) or not IsNullString(skill.ptnbuff)) then
-			local newtarget = MPartySMemberWithBuff(skill.ptbuff, skill.ptnbuff, maxrange)
-			if (newtarget) then
-				target = newtarget
-				TID = newtarget.id
-			else
-				return nil
-			end
-		elseif (skill.ptkbuff ) then
-			local newtarget = MPartySMemberWithBuff(SkillMgr.knownDebuffs, skill.ptnbuff, maxrange)
-			if (newtarget) then
-				target = newtarget
-				TID = newtarget.id
-			else
-				return nil
-			end
+	elseif (skill.trg == GetString("PartyS")) then
+		local newtarget = GetPartyOrTrustTargetWithRole(skill, maxrange, true)
+		if newtarget then
+			target = newtarget
+			TID = newtarget.id
 		else
-			local ally = GetLowestHPParty( skill )
-			if ( ally ) then
-				target = ally
-				TID = ally.id
-			else
-				return nil
-			end
+			return nil
 		end
 	elseif ( skill.trg == GetString("Tank") ) then
 		local ally = MGetBestTankHealTarget( maxrange )
@@ -4591,7 +4705,12 @@ function SkillMgr.CanCast(prio, entity, outofcombat)
 		end
 	end
 	
-	SkillMgr.DebugOutput( prio, "Current target entity : "..tostring(entity.name))
+	local entityLabel
+	if type(entity) == "table" then 
+		entityLabel = tostring(entity.name or entity.id or "unknown") 
+	else entityLabel = tostring(entity) -- likely an ID
+	end
+	SkillMgr.DebugOutput(prio, "Current target entity : " .. entityLabel)
 	local targetTable = SkillMgr.GetSkillTarget(skill, entity, maxrange)
 	if (not targetTable) then
 		SkillMgr.DebugOutput( prio, "Target function returned no valid target for "..tostring(realskilldata.name).." ["..tostring(prio).."]")
@@ -4818,6 +4937,7 @@ function SkillMgr.CanBeQueued(skilldata)
 	return (math.abs(SkillMgr.gcdTime - skilldata.recasttime) <= .1 and not skilldata.isoncd)
 end
 
+
 function SkillMgr.AddDefaultConditions()	
 
 	conditional = { name = "Chain Check"
@@ -4861,6 +4981,14 @@ function SkillMgr.AddDefaultConditions()
 		local realskilldata = SkillMgr.CurrentSkillData
 		local target = SkillMgr.CurrentTarget
 		
+		-- Eukrasia morphs: allow these to pass ReadyCheck if Eukrasia (24290) is ready. 
+		do
+			local sid = SkillMgr.CurrentSkill and tonumber(SkillMgr.CurrentSkill.id) or 0
+			if SkillMgr.ShouldBypassReadyCheck(sid) then
+				return false
+			end
+		end
+
 		if (realskilldata.isready and SkillMgr.IsFacing(realskilldata,MUsingAutoFace(),target)) then
 			return false
 		elseif (IsNinjutsuSkill(realskilldata.id) and skill.stype == "Macro") then
@@ -5657,28 +5785,34 @@ function SkillMgr.AddDefaultConditions()
 	SkillMgr.AddConditional(conditional)
 	
 	
-	conditional = { name = "Target Job Checks"	
-	, eval = function()	
+	conditional = { name = "Target Job Checks"
+	, eval = function()
 		local skill = SkillMgr.CurrentSkill
-		local realskilldata = SkillMgr.CurrentSkillData
 		local target = SkillMgr.CurrentTarget
-		
-		
-		if (GetString(skill.trgtype) ~= GetString("Any") and target.job ~= nil) then
-			local found = true
-			local roleString = GetRoleString(target.job)
-			if not skill.trgtype ~= roleString then 
-				found = false
-			end
-			if IsJobRole(target.job, skill.trgtype) then
-				found = true
-			end
-			if not found then 
-				return true 
-			end
-		end						
 
-		return false
+		-- Whitelist Eukrasia (self-only priming)
+		if skill and tonumber(skill.id) == 24290 then
+			return false
+		end
+
+		-- For non-'Target' selection modes (Party/PartyS/Tank/Ally/etc.), do not gate here.
+		-- Role filtering is handled by the selector helpers.
+		if skill and skill.trg ~= GetString("Target") then
+			return false
+		end
+
+		-- Original gating behavior for direct 'Target' mode only
+		if not skill or not skill.trgtype or not target or not target.job then
+			return true
+		end
+
+		local requiredType = GetString(skill.trgtype)
+		if requiredType == GetString("Any") then
+			return false
+		end
+
+		-- Fail if the target's job does not match the required role
+		return not IsJobRole(target.job, requiredType)
 	end
 	}
 	SkillMgr.AddConditional(conditional)
@@ -6050,7 +6184,7 @@ function SkillMgr.AddDefaultConditions()
 	}
 	SkillMgr.AddConditional(conditional)
 	
-	conditional = { name = "Gaugetest Checks"	
+		conditional = { name = "Gaugetest Checks"	
 	, eval = function()	
 		local skill = SkillMgr.CurrentSkill
 		
@@ -6107,7 +6241,7 @@ function SkillMgr.AddDefaultConditions()
 	end
 	}
 	SkillMgr.AddConditional(conditional)
-	
+
 end
 
 function SkillMgr.Capture(newVal,varName)
@@ -6668,7 +6802,7 @@ function SkillMgr.DrawBattleEditor()
 		end
 			
 		GUI:Columns(1)
-	end
+	end	
 	
 	if (GUI:CollapsingHeader(GetString("casting"),"battle-casting-header")) then
 		GUI:Columns(2,"#battle-casting-main",false)
