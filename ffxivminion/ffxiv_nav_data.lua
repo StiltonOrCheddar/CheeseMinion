@@ -15,6 +15,7 @@ ffxiv_map_nav.data = {
                    ["F"] = "Aller à Ul'dah",
                    ["CN"] = "前往乌尔达哈",
                    ["KR"] = "'울다하'로 이동",
+				   ["TC"] = "前往烏爾達哈",
                 },
 			},
 		},
@@ -31,6 +32,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Gridania",
                     ["CN"] = "前往格里达尼亚",
                     ["KR"] = "'그리다니아'로 이동",
+					["TC"] = "前往格里達尼亞",
                 },
 			},
 		},
@@ -47,6 +49,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Limsa Lominsa",
                     ["CN"] = "前往利姆萨·罗敏萨",
                     ["KR"] = "'림사 로민사'로 이동",
+					["TC"] = "前往利姆薩·羅敏薩",
                 },
 			},
 		},
@@ -65,6 +68,7 @@ ffxiv_map_nav.data = {
 					["F"] = "Aller à Ishgard",
 					["CN"] = "前往伊修加德",
 					["KR"] = "'이슈가르드'로 이동",
+					["TC"] = "前往伊修加爾德",
                 },
 			},
 		},
@@ -100,6 +104,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Limsa Lominsa",
                     ["CN"] = "前往利姆萨·罗敏萨",
                     ["KR"] = "'림사 로민사'로 이동",
+					["TC"] = "前往利姆薩·羅敏薩",
                 },
 			},
 		},
@@ -122,6 +127,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Gridania",
                     ["CN"] = "前往格里达尼亚",
                     ["KR"] = "'그리다니아'로 이동",
+					["TC"] = "前往格里達尼亞",
                 },
 			},
 		},
@@ -143,6 +149,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller au Gold Saucer",
                     ["CN"] = "前往金碟游乐场",
                     ["KR"] = "'골드 소서'로 이동",
+					["TC"] = "前往金碟遊樂園",
                 },
 			},
 		},
@@ -330,6 +337,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Ul'dah",
                     ["CN"] = "前往乌尔达哈",
                     ["KR"] = "'울다하'로 이동",
+					["TC"] = "前往烏爾達哈",
                 },
 			},
 		},
@@ -345,6 +353,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Limsa Lominsa",
                     ["CN"] = "前往利姆萨·罗敏萨",
                     ["KR"] = "'림사 로민사'로 이동",
+					["TC"] = "前往利姆薩·羅敏薩",
                 },
 			},
 		},
@@ -360,6 +369,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller au Gold Saucer",
                     ["CN"] = "前往金碟游乐场",
                     ["KR"] = "'골드 소서'로 이동",
+					["TC"] = "前往金碟遊樂園",
                 },
 			},
 		},
@@ -407,6 +417,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à la jetée du Bouquet",
                     ["CN"] = "前往花蜜栈桥",
                     ["KR"] = "'꽃꿀 나루'로 이동",
+					["TC"] = "前往花蜜棧橋",
                 },
 			},
 		},
@@ -572,6 +583,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Ul'dah",
                     ["CN"] = "前往乌尔达哈",
                     ["KR"] = "'울다하'로 이동",
+					["TC"] = "前往烏爾達哈",
                 },
 			},
 		},
@@ -587,6 +599,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Gridania",
                     ["CN"] = "前往格里达尼亚",
                     ["KR"] = "'그리다니아'로 이동",
+					["TC"] = "前往格里達尼亞",
                 },
 			},
 		},
@@ -602,6 +615,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller au Gold Saucer",
                     ["CN"] = "前往金碟游乐场",
                     ["KR"] = "'골드 소서'로 이동",
+					["TC"] = "前往金碟遊樂園",
                 },
 			},
 		},
@@ -646,6 +660,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Port-aux-Ales",
                     ["CN"] = "前往小麦酒港",
                     ["KR"] = "'맥주 항구'로 이동",
+					["TC"] = "前往小麥酒港",
                 },
 			},
 		},
@@ -662,6 +677,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Costa del Sol",
                     ["CN"] = "前往太阳海岸",
                     ["KR"] = "'코스타 델 솔'로 이동",
+					["TC"] = "前往太陽海岸",
                 },
 			},
 		},
@@ -669,9 +685,9 @@ ffxiv_map_nav.data = {
 			{id = 198, cost = 5, x = 9.192, y = 20.98, z = -15.184, b = 1001029, i = 1},
 		},
 		[628] = {
-			{id = 628, cost = 1, x = -356.02, y = 8.01, z = 46.85, h = -1.63, g = 1021536
+			{id = 628, cost = 1, x = -357.32, y = 8.01, z = 45.79, g = 1021536
 				, requires = {
-					["QuestCompleted(2476)"] = true, -- check quest id. only added to stop low lvl chars attempting pathing
+					["GetQuestInfo(2470,'step') >= 1 or QuestCompleted(2470)"] = true, -- check quest id. only added to stop low lvl chars attempting pathing
                 },
 			},
 		},
@@ -773,6 +789,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Limsa Lominsa",
                     ["CN"] = "前往利姆萨·罗敏萨",
                     ["KR"] = "'림사 로민사'로 이동",
+					["TC"] = "前往利姆薩·羅敏薩",
                 },
 			},
 		},
@@ -802,6 +819,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Limsa Lominsa",
                     ["CN"] = "前往利姆萨·罗敏萨",
                     ["KR"] = "'림사 로민사'로 이동",
+					["TC"] = "前往利姆薩·羅敏薩",
                 },
 			},
 		},
@@ -818,6 +836,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller au quai de la Torche",
                     ["CN"] = "前往守炬埠头",
                     ["KR"] = "'촛불지기 부두'로 이동",
+					["TC"] = "前往守炬碼頭",
                 },
 			},
 		},
@@ -977,7 +996,7 @@ ffxiv_map_nav.data = {
 		[397] = {
            {id = 397, cost = 5, x = -163.44, y = 2.15, z = -5.51, b = 1011195, i = 1
                 , requires =  {
-                    ["CanUseAetheryte(71)"] = true,
+					["QuestCompleted(1583)"] = true,
                 }
             },  
 			{id = 397, cost = 1, x = -186.16, y = 14, z = -57.15, h = -2.27
@@ -1024,6 +1043,7 @@ ffxiv_map_nav.data = {
                    ["F"] = "Azurée",
                    ["CN"] = "传送到天穹街",
                    ["KR"] = "창천 거리 이동",
+				   ["TC"] = "傳送到蒼天街",
                 },
 			},
 		},
@@ -1073,6 +1093,7 @@ ffxiv_map_nav.data = {
                    ["F"] = "Aller à Ul'dah",
                    ["CN"] = "前往乌尔达哈",
                    ["KR"] = "'울다하'로 이동",
+				   ["TC"] = "前往烏爾達哈",
                 },
 			},
 		},
@@ -1088,6 +1109,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Gridania",
                     ["CN"] = "前往格里达尼亚",
                     ["KR"] = "'그리다니아'로 이동",
+					["TC"] = "前往格里達尼亞",
                 },
 			},
 		},
@@ -1103,6 +1125,7 @@ ffxiv_map_nav.data = {
                     ["F"] = "Aller à Limsa Lominsa",
                     ["CN"] = "前往利姆萨·罗敏萨",
                     ["KR"] = "'림사 로민사'로 이동",
+					["TC"] = "前往利姆薩·羅敏薩",
                 },
 			},
 		},
@@ -1119,6 +1142,7 @@ ffxiv_map_nav.data = {
 					["F"] = "Aller au Gold Saucer",
 					["CN"] = "前往金碟游乐场",
 					["KR"] = "'골드 소서'로 이동",
+					["TC"] = "前往金碟遊樂園",
 				},
 			},
 		},
@@ -1137,6 +1161,7 @@ ffxiv_map_nav.data = {
                    -- ["F"] = "Aller à Gridania",
                     --["CN"] = "前往格里达尼亚",
                    -- ["KR"] = "'그리다니아'로 이동",
+				   -- ["TC"] = "前往魔大陸阿濟茲拉",
                 },
 			},
         },
@@ -2284,6 +2309,32 @@ ffxiv_map_nav.data = {
 				["z"] = 356.19;
 			};
 		};
+		[1334] = {
+			[1] = {
+				["requires"] = {
+					["not QuestCompleted(5434)"] = true;
+				};
+				["b"] = 1056205;
+				["cost"] = 1;
+				["id"] = 1334;
+				["x"] = 7.71;
+				["y"] = 50.70;
+				["z"] = 723.78;
+			};
+		};
+		[1332] = {
+			[1] = {
+				["requires"] = {
+					["QuestCompleted(5434)"] = true;
+				};
+				["b"] = 1056206;
+				["cost"] = 1;
+				["id"] = 1332;
+				["x"] = 7.71;
+				["y"] = 50.70;
+				["z"] = 723.78;
+			};
+		};
 	};
 	[1205] = {
 		[1185] = {
@@ -2428,6 +2479,84 @@ ffxiv_map_nav.data = {
 				["x"] = 99.80;
 				["y"] = 0.96;
 				["z"] = 114;
+			};
+		};
+	};
+	-- Treno
+	[1332] = {
+		[1334] = {
+			[1] = {
+				["requires"] = {
+					["(HasQuest(5428) or QuestCompleted(5428)) and not QuestCompleted(5434)"] = true;
+				};
+				["b"] = 2015000;
+				["cost"] = 1;
+				["id"] = 1334;
+				["x"] = 281.06;
+				["y"] = -97.37;
+				["z"] = -260.52;
+			};
+		};
+		[1192] = {
+			[1] = {
+				["requires"] = {
+					["QuestCompleted(5434)"] = true;
+				};
+				["b"] = 2014888;
+				["cost"] = 1;
+				["id"] = 1192;
+				["x"] = 281.06;
+				["y"] = -97.37;
+				["z"] = -260.52;
+			};
+		};
+		[1338] = {
+			[1] = {
+				["b"] = 1056173;
+				["cost"] = 1;
+				["id"] = 1338;
+				["x"] = 293.96;
+				["y"] = -98.00;
+				["z"] = -281.64;
+			};
+		};
+	};
+	-- Alexandria Crater
+	[1334] = {
+		[1192] = {
+			[1] = {
+				["b"] = 1056207;
+				["cost"] = 1;
+				["id"] = 1192;
+				["x"] = -18.54;
+				["y"] = -0.00;
+				["z"] = -17.56;
+			};
+		};
+		[1332] = {
+			[1] = {
+				["requires"] = {
+					["(HasQuest(5428) or QuestCompleted(5428)) and not QuestCompleted(5434)"] = true;
+				};
+				["b"] = 2014999;
+				["cost"] = 1;
+				["id"] = 1332;
+				["x"] = 1.12;
+				["y"] = 0.96;
+				["z"] = -57.00;
+			};
+		};
+	};
+	-- Bentini Outpost
+	[1338] = {
+		[1332] = {
+			[1] = {
+				["b"] = 1056208;
+				["cost"] = 1;
+				["id"] = 1332;
+				["x"] = 29.07;
+				["y"] = -0.00;
+				["z"] = -4.56;
 			};
 		};
 	};

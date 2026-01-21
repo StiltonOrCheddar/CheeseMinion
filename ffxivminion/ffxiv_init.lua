@@ -1168,6 +1168,9 @@ function ml_global_information.Init()
 		ml_mesh_mgr.SetDefaultMesh(1252, "South Horn",true)
 		ml_mesh_mgr.SetDefaultMesh(1299, "[Quest] Containment Complex 10-29",true)
 		ml_mesh_mgr.SetDefaultMesh(1312, "[Quest] The Ageless Necropolis",true)
+		ml_mesh_mgr.SetDefaultMesh(1332, "Treno",true)
+		ml_mesh_mgr.SetDefaultMesh(1334, "Alexandria Crater",true)
+		ml_mesh_mgr.SetDefaultMesh(1338, "[Quest] Bentini Depot",true)
 						
 	end
 	
@@ -1908,7 +1911,8 @@ function ml_global_information.Init()
 				[915] = "Gangos",
 				[928] = "The Puppets' Bunker2",
 				[979] = "Empyreum",
-				[1073] = "Elysion"
+				[1073] = "Elysion",
+				[985] = "Ingleside Apartment Lobby"
 			}
 			ml_mesh_mgr.GetMapNameByMapID = function (mapid) 
 				return IAmTooLazy[mapid]

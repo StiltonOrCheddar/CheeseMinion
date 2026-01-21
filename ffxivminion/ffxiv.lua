@@ -19,13 +19,15 @@ ffxivminion.lastScripExchangeUpdate = {}
 ffxivminion.AetherCurrentData = {}
 ffxivminion.AetherCurrentCompleted = false
 ffxivminion.MoonMapVersion = 0
+ffxivminion.PhaennaMapVersion = 0
 ffxivminion.DutyCurrentData = {}
 ffxivminion.gameRegion = GetGameRegion()
 ffxivminion.maxlevel = 100
 ffxivminion.patchLevel = {
-	[1] = 7.3,
-	[2] = 7.21,
-	[3] = 7.2
+	[1] = 7.4,
+	[2] = 7.4,
+	[3] = 7.3,
+	[4] = 7.2
 }
 ffxivminion.loginvars = {
 	reset = true,
@@ -72,6 +74,10 @@ elseif (ffxivminion.gameRegion == 3) then
 	ffxivminion.loginservers = {
 		[1] = { "-", "모그리", "초코보", "카벙클", "톤베리","펜리르" },
 	}
+elseif (ffxivminion.gameRegion == 4) then
+	ffxivminion.loginservers = {
+        [1] = { "-", "伊弗利特", "迦樓羅", "利維坦", "鳳凰", "奧汀", "巴哈姆特", "泰坦"},
+    }
 end
 
 ffxivminion.classes = {
@@ -459,20 +465,23 @@ function ml_global_information.CharacterSelectScreenOnUpdate(event, tickcount)
 			end
 		else
 			if (IsControlOpen("SelectYesno")) then
-				local SelectYesnoMessage = GetControl("SelectYesno"):GetStrings()[2] or ""
-				local QueueString = {
-					[0] = "ログイン処理を中断してもよろしいですか？", -- JP
-					[1] = "Are you certain you wish to leave the queue?", -- EN
-					[2] = "Den Login-Prozess abbrechen?", -- DE
-					[3] = "Voulez-vous quitter la queue?", -- FR
-					[4] = "确定要取消登录吗？", -- CN
-					[6] = "로그인 처리를 중단하시겠습니까?", -- KR
-				}
-				local ClientLanguage = GetGameLanguage() or 1
-				local QueueMessage = QueueString[ClientLanguage]
-				if SelectYesnoMessage ~= "" then
-					if string.contains(SelectYesnoMessage, QueueMessage) == false then
-						UseControlAction("SelectYesno", "Yes", 0)
+				local SelectYesnoStrings = GetControl("SelectYesno"):GetStrings()
+				if table.valid(SelectYesnoStrings) then
+					local SelectYesnoMessage = SelectYesnoStrings[2] or ""
+					local QueueString = {
+						[0] = "ログイン処理を中断してもよろしいですか？", -- JP
+						[1] = "Are you certain you wish to leave the queue?", -- EN
+						[2] = "Den Login-Prozess abbrechen?", -- DE
+						[3] = "Voulez-vous quitter la queue?", -- FR
+						[4] = "确定要取消登录吗？", -- CN
+						[6] = "로그인 처리를 중단하시겠습니까?", -- KR
+					}
+					local ClientLanguage = GetGameLanguage() or 1
+					local QueueMessage = QueueString[ClientLanguage]
+					if SelectYesnoMessage ~= "" then
+						if string.contains(SelectYesnoMessage, QueueMessage) == false then
+							UseControlAction("SelectYesno", "Yes", 0)
+						end
 					end
 				end
 			else
@@ -602,7 +611,9 @@ function ml_global_information.InGameOnUpdate(event, tickcount)
 				end
 			end
 		end
-
+		if IsControlOpen("EventTutorial") then
+			GetControlByName("EventTutorial"):Destroy()
+    	end
 		if IsNormalMap(Player.localmapid) then
 			if QuestCompleted(1597) and (c_getCurrentInfo:evaluate()) then
 				e_getCurrentInfo:execute()
@@ -614,7 +625,7 @@ function ml_global_information.InGameOnUpdate(event, tickcount)
 				e_getDutyComplete:execute()
 			end
 		end
-		if In(Player.localmapid,1237) then
+		if In(Player.localmapid,1237,1291) then
 			if c_get_mapversion:evaluate() then
 				e_get_mapversion:execute()
 			end
