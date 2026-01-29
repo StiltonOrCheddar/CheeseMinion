@@ -20,6 +20,7 @@ ffxivminion.AetherCurrentData = {}
 ffxivminion.AetherCurrentCompleted = false
 ffxivminion.MoonMapVersion = 0
 ffxivminion.PhaennaMapVersion = 0
+ffxivminion.OizysMapVersion = 0
 ffxivminion.DutyCurrentData = {}
 ffxivminion.gameRegion = GetGameRegion()
 ffxivminion.maxlevel = 100
@@ -614,6 +615,11 @@ function ml_global_information.InGameOnUpdate(event, tickcount)
 		if IsControlOpen("EventTutorial") then
 			GetControlByName("EventTutorial"):Destroy()
     	end
+		if IsControlOpen("ContentsTutorial") then
+            GetControlByName("ContentsTutorial"):PushButton(25,2)
+            GetControlByName("ContentsTutorial"):PushButton(25,3)
+			d("Closing ContentsTutorial")
+        end
 		if IsNormalMap(Player.localmapid) then
 			if QuestCompleted(1597) and (c_getCurrentInfo:evaluate()) then
 				e_getCurrentInfo:execute()
@@ -625,7 +631,7 @@ function ml_global_information.InGameOnUpdate(event, tickcount)
 				e_getDutyComplete:execute()
 			end
 		end
-		if In(Player.localmapid,1237,1291) then
+		if In(Player.localmapid,1237,1291,1310) then
 			if c_get_mapversion:evaluate() then
 				e_get_mapversion:execute()
 			end
