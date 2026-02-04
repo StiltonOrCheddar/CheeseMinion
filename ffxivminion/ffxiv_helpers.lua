@@ -9,6 +9,7 @@ ff.mapsections = {
 	[399] = 0,
 }
 
+
 function GetPatchLevel()
 	local gr = ffxivminion.gameRegion
 	if (IsNull(gr,0) == 0) then
@@ -42,7 +43,7 @@ function GetBestPhaennaMesh(version)
 	if not tonumber(version) then
 		return "Phaenna"
 	end
-
+	
 	local bestMesh = ""
 	local pathName = GetStartupPath()..[[\Navigation\]]
 	for i = 1, 20, 1 do
@@ -53,10 +54,12 @@ function GetBestPhaennaMesh(version)
 			end
 		end
 	end 
-
+	
 	if bestMesh ~= "" then
+		d("return bestMesh mesh")
 		return bestMesh
 	else
+		d("return fallback mesh")
 		return "Phaenna"
 	end
 end
@@ -7162,621 +7165,271 @@ local centerPoints = {
 }
 
 -- Portal positions table for Transport1237 function (Moon map)
-
-
 -- Structure: portalPositions[section][portalName] = {pos = {x, y, z}, facing = direction}
-
-
 local portalPositions = {
-
-
 	-- Example structure:
-
-
 	-- [1] = {
-
-
 	--     ["north"] = {pos = {x = 4.5, y = 3, z = -61}, facing = 3.13},
-
-
 	--     ["east"] = {pos = {x = 59, y = 3, z = 4.5}, facing = 1.57},
-
-
 	-- },
-
-
 }
-
-
-
-
 
 -- Center points table for Phaenna map (map ID 1291)
-
-
 local phaennaCenterPoints = {
-
-
 	[1] = {x = 340.81204223633, y = 53.232280731201, z = -424.27734375},
-
-
 	[2] = {x = 300.49435424805, y = 135.00500488281, z = -780.23266601562},
-
-
 	[3] = {x = 705.83892822266, y = 45.015674591064, z = -719.89788818359},
-
-
 	[4] = {x = 779.9892578125, y = 52.006637573242, z = -429.95877075195},
-
-
 	[5] = {x = 729.52398681641, y = 36.549999237061, z = -36.863914489746},
-
-
 	[6] = {x = 329.41143798828, y = 53.049999237061, z = -128.61769104004},
-
-
 	[7] = {x = 9.90452003479, y = -9.4500007629395, z = -127.33629608154},
-
-
 	[8] = {x = -75.855514526367, y = 26.049999237061, z = -401.98278808594},
-
-
 	[9] = {x = -132.62884521484, y = 63.049999237061, z = -755.02081298828},
-
-
 	[10] = {x = -640.17669677734, y = -1.4500000476837, z = -640.10382080078},
-
-
 	[11] = {x = -410.17105102539, y = -1.450000166893, z = -409.90023803711},
-
-
 	[12] = {x = -768.30712890625, y = 14.050000190735, z = -270.01968383789},
-
-
 	[13] = {x = -579.93798828125, y = 25.049999237061, z = 50.097881317139},
-
-
 	[14] = {x = -310.49234008789, y = -4.4500002861023, z = -134.61961364746},
-
-
 	[15] = {x = -159.8309173584, y = 29.049997329712, z = 304.79067993164},
-
-
 	[16] = {x = -88.341079711914, y = 34.549995422363, z = 660.40710449219},
-
-
 	[17] = {x = 184.58963012695, y = -4.9500002861023, z = 430.32192993164},
-
-
 	[18] = {x = 255.0668182373, y = -8.9499998092651, z = 131.74061584473},
-
-
-	[19] = {x = 836.99548339844, y = -167.99984741211, z = 435.69207763672},
-
-
+	[19] = {x = 836.99548339844, y = -167.99984741211, z = 435.69207763672, radius = 50},
 	[20] = {x = 528.12316894531, y = -219.81588745117, z = 751.91760253906},
-
-
 	[21] = {x = 410.08758544922, y = -229.44999694824, z = 229.9786529541},
-
-
 	[22] = {x = 651.92114257812, y = -242, z = 412.4010925293},
-
-
 	[23] = {x = -353.89910888672, y = 11, z = 394.69711303711},
-
-
 	[24] = {x = -591.08990478516, y = 28.5, z = 714.78485107422},
-
-
+	[25] = {x = 362, y = -255, z = 419, radius = 100, markeronly = true}, 
+	[26] = {x = 522, y = -255, z = 461, radius = 200, markeronly = true}, 
 }
-
-
-
-
 
 -- Portal positions table for Transport1291 function (Phaenna map)
-
-
 -- Structure: phaennaPortalPositions[section][portalName] = {pos = {x, y, z}, facing = direction, requires = version}
-
-
 local phaennaPortalPositions = {
-
-
 	[1] = {
-
-
 		["1 South"] = {pos = {x = 335.44281005859, y = 54.712898254395, z = -358.22018432617}, facing = -0.012654781341553, requires = 3},
-
-
 		["1 East"] = {pos = {x = 401.81268310547, y = 54.720272064209, z = -415.56481933594}, facing = 1.5231320858002, requires = 3},
-
-
 		["1 North"] = {pos = {x = 344.38037109375, y = 54.788475036621, z = -482.10101318359}, facing = -3.1412332057953, requires = 3},
-
-
 		["1 West"] = {pos = {x = 278.26257324219, y = 54.703285217285, z = -424.41870117188}, facing = -1.605092048645, requires = 3},
-
-
 	},
-
-
 	[2] = {
-
-
 		["2 West"] = {pos = {x = 280.6510925293, y = 137.11187744141, z = -784.58874511719}, facing = -1.5683875083923, requires = 3},
-
-
 		["2 South"] = {pos = {x = 295.38925170898, y = 137.12284851074, z = -760.60290527344}, facing = 0.014217376708984, requires = 3},
-
-
 		["2 East"] = {pos = {x = 319.10369873047, y = 137.05345153809, z = -775.52221679688}, facing = 1.5640726089478, requires = 3},
-
-
 	},
-
-
 	[3] = {
-
-
 		["3 North"] = {pos = {x = 693.21905517578, y = 47.162975311279, z = -731.97808837891}, facing = -2.1145758628845, requires = 3},
-
-
 		["3 South"] = {pos = {x = 706.93615722656, y = 47.072654724121, z = -702.64990234375}, facing = 0.35668730735779, requires = 3},
-
-
 	},
-
-
 	[4] = {
-
-
 		["4 North"] = {pos = {x = 784.53430175781, y = 54.136222839355, z = -449.45394897461}, facing = 3.1168847084045, requires = 3},
-
-
 		["4 West"] = {pos = {x = 760.48773193359, y = 54.15030670166, z = -434.46020507812}, facing = -1.6024422645569, requires = 3},
-
-
 		["4 South"] = {pos = {x = 775.45471191406, y = 54.149658203125, z = -410.48895263672}, facing = -0.015213012695312, requires = 3},
-
-
 	},
-
-
 	[5] = {
-
-
 		["5 North"] = {pos = {x = 734.57006835938, y = 38.105602264404, z = -56.32381439209}, facing = -3.1168489456177, requires = 3},
-
-
 		["5 West"] = {pos = {x = 710.79028320312, y = 38.079124450684, z = -41.526634216309}, facing = -1.5963478088379, requires = 3},
-
-
 	},
-
-
 	[6] = {
-
-
 		["6 East"] = {pos = {x = 349.74792480469, y = 54.705028533936, z = -123.49275970459}, facing = 1.5488958358765, requires = 3},
-
-
 		["6 South"] = {pos = {x = 325.39205932617, y = 54.616321563721, z = -108.63063049316}, facing = -0.012403011322021, requires = 3},
-
-
 		["6 West"] = {pos = {x = 310.15768432617, y = 54.727970123291, z = -132.47853088379}, facing = -1.6209945678711, requires = 3},
-
-
 		["6 North"] = {pos = {x = 334.47598266602, y = 54.611267089844, z = -147.34788513184}, facing = 3.0946049690247, requires = 3},
-
-
 	},
-
-
 	[7] = {
-
-
 		["7 North"] = {pos = {x = -0.69419074058533, y = -7.8070383071899, z = -144.15887451172}, facing = -2.3638982772827, requires = 3},
-
-
 		["7 South"] = {pos = {x = 20.726938247681, y = -7.7953882217407, z = -109.8038482666}, facing = 0.77561831474304, requires = 3},
-
-
 		["7 West"] = {pos = {x = -7.4188623428345, y = -7.7117071151733, z = -115.99282073975}, facing = -0.79098653793335, requires = 3},
-
-
 		["7 East"] = {pos = {x = 27.120849609375, y = -7.8077831268311, z = -137.72773742676}, facing = 2.3547949790955, requires = 3},
-
-
 	},
-
-
 	[8] = {
-
-
 		["8 West"] = {pos = {x = -94.784133911133, y = 27.478994369507, z = -406.62219238281}, facing = -1.5451340675354, requires = 3},
-
-
 		["8 North"] = {pos = {x = -71.450614929199, y = 27.457103729248, z = -420.69268798828}, facing = -3.1033663749695, requires = 3},
-
-
 		["8 East"] = {pos = {x = -56.633628845215, y = 27.615243911743, z = -397.41510009766}, facing = 1.5755242109299, requires = 3},
-
-
 		["8 South"] = {pos = {x = -80.446273803711, y = 27.536111831665, z = -382.97152709961}, facing = -0.02249002456665, requires = 3},
-
-
 	},
-
-
 	[9] = {
-
-
 		["9 West"] = {pos = {x = -152.2115020752, y = 64.502410888672, z = -757.90411376953}, facing = -1.4898562431335, requires = 3},
-
-
 		["9 South"] = {pos = {x = -135.81600952148, y = 64.560539245605, z = -735.54821777344}, facing = 0.070456266403198, requires = 3},
-
-
 		["9 East"] = {pos = {x = -113.65897369385, y = 64.535682678223, z = -752.23718261719}, facing = 1.6307830810547, requires = 3},
-
-
 	},
-
-
 	[10] = {
-
-
 		["10 South"] = {pos = {x = -656.77233886719, y = 0.062476754188538, z = -629.70349121094}, facing = -0.78653764724731, requires = 3},
-
-
 		["10 South East"] = {pos = {x = -629.52423095703, y = 0.098739981651306, z = -623.18896484375}, facing = 0.72142219543457, requires = 3},
-
-
 		["10 North"] = {pos = {x = -623.51904296875, y = 0.015967726707458, z = -650.30834960938}, facing = 2.3320145606995, requires = 3},
-
-
 	},
-
-
 	[11] = {
-
-
 		["11 North"] = {pos = {x = -415.42221069336, y = -0.049300670623779, z = -428.42251586914}, facing = -2.614227771759, requires = 3},
-
-
 		["11 East"] = {pos = {x = -391.35348510742, y = 0.016456723213196, z = -415.59317016602}, facing = 2.0437049865723, requires = 3},
-
-
 		["11 South"] = {pos = {x = -404.26916503906, y = 0.072002291679382, z = -391.16036987305}, facing = 0.49805617332458, requires = 3},
-
-
 		["11 West"] = {pos = {x = -428.5358581543, y = -0.015488028526306, z = -404.48669433594}, facing = -1.0580801963806, requires = 3},
-
-
 	},
-
-
 	[12] = {
-
-
 		["12 East"] = {pos = {x = -749.30236816406, y = 15.457899093628, z = -265.50018310547}, facing = 1.539519071579, requires = 3},
-
-
 		["12 South"] = {pos = {x = -772.53259277344, y = 15.569341659546, z = -250.83029174805}, facing = -0.016607284545898, requires = 3},
-
-
 		["12 North"] = {pos = {x = -763.44354248047, y = 15.576946258545, z = -289.20202636719}, facing = -3.12468957901, requires = 3},
-
-
 	},
-
-
 	[13] = {
-
-
 		["13 South"] = {pos = {x = -584.45642089844, y = 26.543340682983, z = 69.059196472168}, facing = 0.010619640350342, requires = 15},
-
-
 		["13 West"] = {pos = {x = -597.75872802734, y = 26.237712860107, z = 45.515167236328}, facing = -1.608350276947, requires = 3},
-
-
 		["13 East"] = {pos = {x = -560.92022705078, y = 26.547811508179, z = 54.541576385498}, facing = 1.5688467025757, requires = 3},
-
-
 	},
-
-
 	[14] = {
-
-
 		["14 East"] = {pos = {x = -292.8388671875, y = -2.8136219978333, z = -145.65234375}, facing = 2.3666830062866, requires = 3},
-
-
 		["14 South"] = {pos = {x = -299.26968383789, y = -2.804785490036, z = -117.86373138428}, facing = 0.76867461204529, requires = 3},
-
-
 		["14 West"] = {pos = {x = -327.21426391602, y = -2.7655930519104, z = -124.11211395264}, facing = -0.80211496353149, requires = 3},
-
-
 		["14 North"] = {pos = {x = -320.95230102539, y = -2.7299892902374, z = -152.3638458252}, facing = -2.3708186149597, requires = 3},
-
-
 	},
-
-
 	[15] = {
-
-
 		["15 North"] = {pos = {x = -155.56791687012, y = 30.692188262939, z = 285.30819702148}, facing = 3.1173610687256, requires = 3},
-
-
 		["15 East"] = {pos = {x = -139.88655090332, y = 30.791036605835, z = 309.4778137207}, facing = 1.527715086937, requires = 3},
-
-
 		["15 South"] = {pos = {x = -164.53030395508, y = 30.692029953003, z = 324.6911315918}, facing = -0.023638248443604, requires = 3},
-
-
 	},
-
-
 	[16] = {
-
-
 		["16 North"] = {pos = {x = -83.446899414062, y = 36.184600830078, z = 640.34045410156}, facing = -3.1358206272125, requires = 3},
-
-
 		["16 East"] = {pos = {x = -68.001731872559, y = 36.263927459717, z = 664.58166503906}, facing = 1.5682384967804, requires = 3},
-
-
 	},
-
-
 	[17] = {
-
-
 		["17 South"] = {pos = {x = 180.55389404297, y = -3.349100112915, z = 449.5163269043}, facing = -0.020385265350342, requires = 3},
-
-
 		["17 West"] = {pos = {x = 165.22975158691, y = -3.2889921665192, z = 425.54071044922}, facing = -1.5932784080505, requires = 3},
-
-
 		["17 North"] = {pos = {x = 189.46684265137, y = -3.2384967803955, z = 410.01361083984}, facing = 3.1316757202148, requires = 3},
-
-
 	},
-
-
 	[18] = {
-
-
 		["18 South"] = {pos = {x = 250.40814208984, y = -7.2467384338379, z = 151.95135498047}, facing = -0.0060591697692871, requires = 3},
-
-
 		["18 West"] = {pos = {x = 235.23783874512, y = -7.29088306427, z = 127.39561462402}, facing = -1.6187477111816, requires = 3},
-
-
 		["18 North"] = {pos = {x = 259.66940307617, y = -7.3011531829834, z = 112.27989959717}, facing = -3.1246209144592, requires = 3},
-
-
 		["18 East"] = {pos = {x = 274.87707519531, y = -7.2645902633667, z = 136.57699584961}, facing = 1.5810908079147, requires = 9},
-
-
 	},
-
-
 	[19] = {
-
-
 		["19 North"] = {pos = {x = 835.71246337891, y = -165.84983825684, z = 417.6955871582}, facing = -2.8157787322998, requires = 9},
-
-
 		["19 South"] = {pos = {x = 827.09887695312, y = -165.75074768066, z = 449.61749267578}, facing = -0.34333086013794, requires = 9},
-
-
 	},
-
-
 	[20] = {
-
-
 		["20 East"] = {pos = {x = 546.57580566406, y = -217.72845458984, z = 753.64434814453}, facing = 1.7485721111298, requires = 9},
-
-
 		["20 West"] = {pos = {x = 516.11279296875, y = -217.76351928711, z = 739.70544433594}, facing = -2.1073679924011, requires = 9},
-
-
 	},
-
-
 	[21] = {
-
-
 		["21 South"] = {pos = {x = 402.00695800781, y = -227.70248413086, z = 249.0407409668}, facing = -0.15734910964966, requires = 9},
-
-
 		["21 East"] = {pos = {x = 428.91177368164, y = -227.73727416992, z = 237.87274169922}, facing = 1.3945111036301, requires = 9},
-
-
 	},
-
-
 	[22] = {
-
-
 		["22 West"] = {pos = {x = 666.41296386719, y = -239.86967468262, z = 420.05157470703}, facing = -2.3591361045837, requires = 9},
-
-
 	},
-
-
 	[23] = {
-
-
 		["23 South"] = {pos = {x = -360.09902954102, y = 12.913031578064, z = 408.48693847656}, facing = -0.18243551254272, requires = 15},
-
-
 		["23 North"] = {pos = {x = -356.82244873047, y = 12.94538974762, z = 377.64999389648}, facing = -2.6249966621399, requires = 15},
-
-
 	},
-
-
 	[24] = {
-
-
 		["24 North"] = {pos = {x = -585.68463134766, y = 29.867956161499, z = 719.50628662109}, facing = 1.5795422792435, requires = 15},
-
-
 	},
+}
 
+-- Center points table for Oizys map (map ID 1310)
+local oizysCenterPoints = {
+	[1] = {x = -181.25546264648, y = 0.6499959230423, z = 127.43065643311},
+	[2] = {x = -541.97692871094, y = 23.549997329712, z = 120.22773742676},
+	[3] = {x = -660.28717041016, y = 28.549997329712, z = 430.60397338867},
+	[4] = {x = -389.13525390625, y = 45.049995422363, z = 402.38745117188},
+	[5] = {x = -444.86801147461, y = 102.05000305176, z = 770.24237060547},
+	[6] = {x = 92.751541137695, y = 98.049995422363, z = 353.21557617188},
+	[7] = {x = 337.31475830078, y = 100.55000305176, z = 395.31646728516},
+	[8] = {x = 179.93156433105, y = 0.049999952316284, z = -7.2751002311707},
+	[9] = {x = 495.63558959961, y = -51.950000762939, z = -312.27783203125},
+	[10] = {x = 191.55912780762, y = -53.950000762939, z = -399.96929931641},
+	[11] = {x = 311.0680847168, y = -153.44999694824, z = -625.77490234375},
+	[12] = {x = -150.49978637695, y = -22.450000762939, z = -236.86859130859},
+	[13] = {x = -529.56372070312, y = -26.950000762939, z = -240.56285095215},
+	[14] = {x = -702.82159423828, y = -87.449996948242, z = -493.96188354492},
+	[15] = {x = -479.48474121094, y = -104.44999694824, z = -760.41607666016},
+	[16] = {x = -131.52336120605, y = -74.949996948242, z = -582.13360595703},
+	[17] = {x = 186.33740234375, y = 46.89429473877, z= 194.92637634277, radius = 100, markeronly = true},
 
 }
 
-
-
-
-
--- Function to save center point (Moon map)
-
-
-function SaveCenterPoint(section, pos)
-
-
-	if not section or not pos then
-
-
-		return false
-
-
-	end
-
-
-	centerPoints[section] = {x = pos.x, y = pos.y, z = pos.z}
-
-
-	return true
-
-
-end
-
-
-
-
-
--- Function to save portal position (Moon map)
-
-
-function SavePortalPosition(section, portalName, pos, facing)
-
-
-	if not section or not portalName or not pos or not facing then
-
-
-		return false
-
-
-	end
-
-
-	if not portalPositions[section] then
-
-
-		portalPositions[section] = {}
-
-
-	end
-
-
-	portalPositions[section][portalName] = {
-
-
-		pos = {x = pos.x, y = pos.y, z = pos.z},
-
-
-		facing = facing
-
-
-	}
-
-
-	return true
-
-
-end
-
-
-
-
-
--- Function to save center point (Phaenna map)
-
-
-function SavePhaennaCenterPoint(section, pos)
-
-
-	if not section or not pos then
-
-
-		return false
-
-
-	end
-
-
-	phaennaCenterPoints[section] = {x = pos.x, y = pos.y, z = pos.z}
-
-
-	return true
-
-
-end
-
-
-
-
-
--- Function to save portal position (Phaenna map)
-
-
-function SavePhaennaPortalPosition(section, portalName, pos, facing)
-
-
-	if not section or not portalName or not pos or not facing then
-
-
-		return false
-
-
-	end
-
-
-	if not phaennaPortalPositions[section] then
-
-
-		phaennaPortalPositions[section] = {}
-
-
-	end
-
-
-	phaennaPortalPositions[section][portalName] = {
-
-
-		pos = {x = pos.x, y = pos.y, z = pos.z},
-
-
-		facing = facing
-
-
-	}
-
-
-	return true
-
-
-end
+-- Portal positions table for Transport1310 function (Oizys map)
+-- Structure: OizysPortalPositions[section][portalName] = {pos = {x, y, z}, facing = direction, requires = version}
+local oizysPortalPositions = {
+	[1] = {
+		["1-2"] = {pos = {x = -293.25036621094, y = 2.3533852100372, z = 133.51333618164}, facing = -1.6008443832397},
+		["1-8"] = {pos = {x = -66.465103149414, y = 2.419600725174, z = 142.51440429688}, facing = 1.5686157941818},
+		["1-12"] = {pos = {x = -175.4949798584, y = 2.2701947689056, z = 58.101634979248}, facing = 3.1179733276367},
+	},
+	[2] = {
+		["2-1"] = {pos = {x = -523.32775878906, y = 24.951919555664, z = 124.49559020996}, facing = 1.5395995378494},
+		["2-3"] = {pos = {x = -560.31311035156, y = 24.868143081665, z = 115.5802230835}, facing = -1.5978035926819},
+		["2-4"] = {pos = {x = -546.51708984375, y = 24.996839523315, z = 138.8616027832}, facing = -0.037478923797607},
+		["2-13"] = {pos = {x = -537.58197021484, y = 24.800720214844, z = 101.97190093994}, facing = 3.1236026287079},
+	},
+	[3] = {
+		["3-2"] = {pos = {x = -656.48608398438, y = 29.951251983643, z = 412.33215332031}, facing = 3.105987071991},
+		["3-4"] = {pos = {x = -642.73937988281, y = 29.855072021484, z = 435.42391967773}, facing = 1.551945567131},
+		["3-5"] = {pos = {x = -665.48620605469, y = 29.793533325195, z = 448.99755859375}, facing = -0.0167555809021},
+	},
+	[4] = {
+		["4-2"] = {pos = {x = -383.57571411133, y = 46.204975128174, z = 383.37881469727}, facing = 3.1282544136047},
+		["4-3"] = {pos = {x = -405.98107910156, y = 46.290012359619, z = 396.64071655273}, facing = -1.6281161308289},
+		["4-5"] = {pos = {x = -392.45858764648, y = 46.244190216064, z = 418.78784179688}, facing = -0.027034282684326},
+		["4-6"] = {pos = {x = -369.78717041016, y = 46.343814849854, z = 405.59954833984}, facing = 1.5417629480362},
+	},
+	[5] = {
+		["5-3"] = {pos = {x = -463.4543762207, y = 103.40139770508, z = 765.39892578125}, facing = -1.5589146614075},
+		["5-4"] = {pos = {x = -440.57000732422, y = 103.35195922852, z = 751.75415039062}, facing = 3.1073977947235},
+	},
+	[6] = {
+		["6-4"] = {pos = {x = 73.946029663086, y = 99.307167053223, z = 348.57626342773}, facing = -1.5912556648254},
+		["6-7"] = {pos = {x = 110.15033721924, y = 99.329116821289, z = 357.55178833008}, facing = 1.5565414428711},
+		["6-8"] = {pos = {x = 96.469818115234, y = 99.340370178223, z = 334.80340576172}, facing = 3.1288359165192},
+	},
+	[7] = {
+		["7-6"] = {pos = {x = 322.52560424805, y = 101.69618988037, z = 399.90118408203}, facing = -1.0836730003357},
+	},
+	[8] = {
+		["8-1"] = {pos = {x = 161.19082641602, y = 1.4848711490631, z = -12.497827529907}, facing = -1.5819816589355},
+		["8-6"] = {pos = {x = 175.43371582031, y = 1.372104883194, z = 10.331471443176}, facing = 0.0034759044647217},
+		["8-9"] = {pos = {x = 198.06694030762, y = 1.3095018863678, z = -3.5957391262054}, facing = 1.5317976474762},
+	},
+	[9] = {
+		["9-8"] = {pos = {x = 491.5051574707, y = -50.650585174561, z = -294.76495361328}, facing = 0.0017528533935547},
+		["9-10"] = {pos = {x = 478.24984741211, y = -50.764305114746, z = -317.58221435547}, facing = -1.5648550987244},
+		["9-11"] = {pos = {x = 500.58871459961, y = -50.740970611572, z = -330.85092163086}, facing = 3.1119289398193},
+	},
+	[10] = {
+		["10-8"] = {pos = {x = 187.51667785645, y = -52.709445953369, z = -382.01510620117}, facing = -0.011734008789062},
+		["10-9"] = {pos = {x = 210.29347229004, y = -52.63720703125, z = -395.47219848633}, facing = 1.5506862401962},
+		["10-11"] = {pos = {x = 196.52470397949, y = -52.680435180664, z = -418.10818481445}, facing = 3.0963513851166},
+		["10-12"] = {pos = {x = 173.90007019043, y = -52.682018280029, z = -404.41467285156}, facing = -1.582531452179},
+	},
+	[11] = {
+		["11-9"] = {pos = {x = 327.99136352539, y = -152.20829772949, z = -621.45568847656}, facing = 1.5643068552017},
+		["11-10"] = {pos = {x = 305.57891845703, y = -152.2045135498, z = -607.994140625}, facing = -0.031622409820557},
+	},
+	[12] = {
+		["12-1"] = {pos = {x = -154.40957641602, y = -21.216987609863, z = -219.04716491699}, facing = 0.00052022933959961},
+		["12-10"] = {pos = {x = -131.81372070312, y = -21.162435531616, z = -232.38307189941}, facing = 1.5378059148788},
+		["12-13"] = {pos = {x = -168.65303039551, y = -21.051862716675, z = -241.56370544434}, facing = -1.5749621391296},
+		["12-16"] = {pos = {x = -145.55340576172, y = -21.084846496582, z = -255.51443481445}, facing = 3.1177649497986},
+	},
+	[13] = {
+		["13-2"] = {pos = {x = -534.53161621094, y = -25.598592758179, z = -221.54399108887}, facing = -0.0080380439758301},
+		["13-12"] = {pos = {x = -511.68930053711, y = -25.633157730103, z = -235.41729736328}, facing = 1.5732287168503},
+		["13-14"] = {pos = {x = -525.52416992188, y = -25.410577774048, z = -259.25506591797}, facing = 3.1166689395905},
+	},
+	[14] = {
+		["14-13"] = {pos = {x = -706.41021728516, y = -86.137657165527, z = -475.71002197266}, facing = -0.035250186920166},
+		["14-15"] = {pos = {x = -697.58343505859, y = -86.136566162109, z = -512.29461669922}, facing = 3.1314754486084},
+		["14-16"] = {pos = {x = -684.18811035156, y = -86.250518798828, z = -489.50271606445}, facing = 1.5648678541183},
+	},
+	[15] = {
+		["15-14"] = {pos = {x = -498.39517211914, y = -103.11254882812, z = -764.427734375}, facing = -1.6053042411804},
+		["15-16"] = {pos = {x = -461.677734375, y = -103.13042449951, z = -755.49774169922}, facing = 1.5612200498581},
+	},
+	[16] = {
+		["16-12"] = {pos = {x = -136.58618164062, y = -73.603134155273, z = -563.56329345703}, facing = -0.017890453338623},
+		["16-14"] = {pos = {x = -150.05581665039, y = -73.6923828125, z = -586.57208251953}, facing = -1.6096305847168},
+		["16-15"] = {pos = {x = -127.47785949707, y = -73.626647949219, z = -600.33679199219}, facing = -3.1238789558411},
+	},
+}
 
 function GetCosmicMoon(pos,closest)
 	local closestIndex = 0
@@ -7817,1452 +7470,6 @@ function GetCosmicMoon(pos,closest)
 	-- default if no match
 	return closestIndex 
 end
-
--- Phaenna map functions (map ID 1291)
-
-
-function GetPhaenna(pos, closest)
-
-
-	local closestIndex = 0
-
-
-	local closestDistance = math.huge
-
-
-	
-
-
-	for index, centerPos in pairs(phaennaCenterPoints) do
-
-
-		local distance = math.distance2d(pos, centerPos)
-
-
-		local threshold = IsNull(centerPos.radius, 150)
-
-
-		if not centerPos.markeronly then
-
-
-			if distance < closestDistance then
-
-
-				closestDistance = distance
-
-
-				closestIndex = index
-
-
-			end
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	-- default if no match
-
-
-	return closestIndex
-
-
-end
-
-
-
-
-
-if not ff.phaennaPathingData then
-
-
-	ff.phaennaPathingData = {}
-
-
-end
-
-
-if not ff.lastPhaennaTransportCheck then
-
-
-	ff.lastPhaennaTransportCheck = {
-
-
-		pos1 = nil,
-
-
-		pos2 = nil,
-
-
-		result = nil
-
-
-	}
-
-
-end
-
-
-
-
-
-function CalcPhaennaTransport(pos1, pos2, pos1Section, pos2Section)
-
-
-	-- Check if positions are close to last check (within 100 units)
-
-
-	local last = ff.lastPhaennaTransportCheck
-
-
-	if last.pos1 and last.pos2 then
-
-
-		if math.distance2d(pos1, last.pos1) < 100 and math.distance2d(pos2, last.pos2) < 100 then
-
-
-			return last.result
-
-
-		end
-
-
-	end
-
-
-
-
-
-	-- Check for existing cached pathingData
-
-
-	if ff.phaennaPathingData[pos1Section] and ff.phaennaPathingData[pos1Section][pos2.x] and ff.phaennaPathingData[pos1Section][pos2.x][pos2.z] ~= nil then
-
-
-		local cached = ff.phaennaPathingData[pos1Section][pos2.x][pos2.z]
-
-
-		ff.lastPhaennaTransportCheck = { pos1 = pos1, pos2 = pos2, result = cached }
-
-
-		return cached
-
-
-	end
-
-
-
-
-
-	-- Only calculate if all data is present
-
-
-	if pos1 and pos2 and phaennaCenterPoints[pos1Section] and phaennaCenterPoints[pos2Section] then
-
-
-		local distance1 = GetPathDistance(pos1, pos2) * 1.5
-
-
-		local distance2 =
-
-
-			GetPathDistance(pos1, phaennaCenterPoints[pos1Section]) +
-
-
-			GetPathDistance(phaennaCenterPoints[pos2Section], pos2)
-
-
-
-
-
-		-- Init pathingData table
-
-
-		ff.phaennaPathingData[pos1Section] = ff.phaennaPathingData[pos1Section] or {}
-
-
-		ff.phaennaPathingData[pos1Section][pos2.x] = ff.phaennaPathingData[pos1Section][pos2.x] or {}
-
-
-
-
-
-		local result
-
-
-		if distance1 > distance2 then
-
-
-			result = true
-
-
-		else
-
-
-			result = false
-
-
-		end
-
-
-
-
-
-		-- Save result in both pathingData and last check
-
-
-		ff.phaennaPathingData[pos1Section][pos2.x][pos2.z] = result
-
-
-		ff.lastPhaennaTransportCheck = { pos1 = pos1, pos2 = pos2, result = result }
-
-
-		return result
-
-
-	end
-
-
-
-
-
-	return false
-
-
-end
-
-
-
-
-
--- Helper function to check if portal meets version requirements
-
-
-local function PortalMeetsVersion(portalData)
-
-
-	if not portalData then
-
-
-		return false
-
-
-	end
-
-
-	local requiredVersion = portalData.requires or 3
-
-
-	return ffxivminion.PhaennaMapVersion >= requiredVersion
-
-
-end
-
-
-
-
-
--- Helper function to find the best portal for a section connection (cycles through portals)
-
-
-local portalCycleIndex = {}
-
-
-local portalCycleDirection = {}
-
-
-
-
-
-local function FindPhaennaPortal(sourceSection, targetSection)
-
-
-	if not phaennaPortalPositions[sourceSection] then
-
-
-		return nil
-
-
-	end
-
-
-	
-
-
-	local sourceCenter = phaennaCenterPoints[sourceSection]
-
-
-	local targetCenter = phaennaCenterPoints[targetSection]
-
-
-	
-
-
-	if not sourceCenter or not targetCenter then
-
-
-		return nil
-
-
-	end
-
-
-	
-
-
-	-- Calculate direction from source to target
-
-
-	local dx = targetCenter.x - sourceCenter.x
-
-
-	local dz = targetCenter.z - sourceCenter.z
-
-
-	
-
-
-	-- Determine primary direction
-
-
-	local primaryDir = nil
-
-
-	if math.abs(dx) > math.abs(dz) then
-
-
-		if dx > 0 then
-
-
-			primaryDir = "East"
-
-
-		else
-
-
-			primaryDir = "West"
-
-
-		end
-
-
-	else
-
-
-		if dz > 0 then
-
-
-			primaryDir = "South"
-
-
-		else
-
-
-			primaryDir = "North"
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	-- Try to find portal by direction name
-
-
-	local portals = phaennaPortalPositions[sourceSection]
-
-
-	local validPortals = {}
-
-
-	
-
-
-	-- First, check for special portals (Lava connections)
-
-
-	if targetSection == 13 or targetSection == 23 or targetSection == 24 then
-
-
-		if portals["13 South"] and PortalMeetsVersion(portals["13 South"]) then
-
-
-			table.insert(validPortals, portals["13 South"])
-
-
-		end
-
-
-		if portals["23 South"] and PortalMeetsVersion(portals["23 South"]) then
-
-
-			table.insert(validPortals, portals["23 South"])
-
-
-		end
-
-
-		if portals["23 North"] and PortalMeetsVersion(portals["23 North"]) then
-
-
-			table.insert(validPortals, portals["23 North"])
-
-
-		end
-
-
-		if portals["24 North"] and PortalMeetsVersion(portals["24 North"]) then
-
-
-			table.insert(validPortals, portals["24 North"])
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	-- Check for section-specific portals (e.g., "13 West", "12 East")
-
-
-	for portalName, portalData in pairs(portals) do
-
-
-		local sectionNum = tonumber(string.match(portalName, "^(%d+)"))
-
-
-		if sectionNum == targetSection and PortalMeetsVersion(portalData) then
-
-
-			table.insert(validPortals, portalData)
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	-- Try directional portals
-
-
-	if primaryDir and portals[primaryDir] and PortalMeetsVersion(portals[primaryDir]) then
-
-
-		table.insert(validPortals, portals[primaryDir])
-
-
-	end
-
-
-	
-
-
-	-- Try section-specific directional portals (e.g., "1 North", "2 South")
-
-
-	for portalName, portalData in pairs(portals) do
-
-
-		if string.find(portalName, primaryDir) and PortalMeetsVersion(portalData) then
-
-
-			table.insert(validPortals, portalData)
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	-- Fallback: add all available portals that meet version requirements
-
-
-	for portalName, portalData in pairs(portals) do
-
-
-		if PortalMeetsVersion(portalData) then
-
-
-			local alreadyAdded = false
-
-
-			for _, vp in ipairs(validPortals) do
-
-
-				if vp == portalData then
-
-
-					alreadyAdded = true
-
-
-					break
-
-
-				end
-
-
-			end
-
-
-			if not alreadyAdded then
-
-
-				table.insert(validPortals, portalData)
-
-
-			end
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	if #validPortals == 0 then
-
-
-		return nil
-
-
-	end
-
-
-	
-
-
-	-- Cycle through portals back and forth
-
-
-	local cycleKey = tostring(sourceSection) .. "_" .. tostring(targetSection)
-
-
-	if not portalCycleIndex[cycleKey] then
-
-
-		portalCycleIndex[cycleKey] = 1
-
-
-		portalCycleDirection[cycleKey] = 1 -- 1 for forward, -1 for backward
-
-
-	end
-
-
-	
-
-
-	local currentIndex = portalCycleIndex[cycleKey]
-
-
-	local portal = validPortals[currentIndex]
-
-
-	
-
-
-	-- Move to next portal
-
-
-	if portalCycleDirection[cycleKey] == 1 then
-
-
-		-- Moving forward
-
-
-		if currentIndex >= #validPortals then
-
-
-			-- Reached end, reverse direction
-
-
-			portalCycleDirection[cycleKey] = -1
-
-
-			portalCycleIndex[cycleKey] = currentIndex - 1
-
-
-		else
-
-
-			portalCycleIndex[cycleKey] = currentIndex + 1
-
-
-		end
-
-
-	else
-
-
-		-- Moving backward
-
-
-		if currentIndex <= 1 then
-
-
-			-- Reached start, reverse direction
-
-
-			portalCycleDirection[cycleKey] = 1
-
-
-			portalCycleIndex[cycleKey] = currentIndex + 1
-
-
-		else
-
-
-			portalCycleIndex[cycleKey] = currentIndex - 1
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	return portal
-
-
-end
-
-
-
-
-
-function Transport1291(pos1, pos2)
-
-
-	local pos1 = pos1 or Player.pos
-
-
-	local pos2 = pos2
-
-
-	local pos1Section = GetPhaenna(pos1)
-
-
-	local pos2Section = GetPhaenna(pos2, true)
-
-
-	
-
-
-	-- Check if we're on the Phaenna map
-
-
-	if Player.localmapid ~= 1291 then
-
-
-		return false
-
-
-	end
-
-
-	
-
-
-	-- cosmoliner introduced map 3
-
-
-	if ffxivminion.PhaennaMapVersion < 3 then
-
-
-		return false
-
-
-	end
-
-
-	
-
-
-	-- Need valid sections
-
-
-	if not pos1Section or pos1Section == 0 or not pos2Section or pos2Section == 0 then
-
-
-		return false
-
-
-	end
-
-
-	
-
-
-	-- Check map version requirements for specific sectors
-
-
-	-- Sectors 19, 20, 21, 22 require version >= 9
-
-
-	if In(pos1Section, 19, 20, 21, 22) or In(pos2Section, 19, 20, 21, 22) then
-
-
-		if ffxivminion.PhaennaMapVersion < 9 then
-
-
-			return false
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	-- Sectors 23, 24 require version >= 15
-
-
-	if In(pos1Section, 23, 24) or In(pos2Section, 23, 24) then
-
-
-		if ffxivminion.PhaennaMapVersion < 15 then
-
-
-			return false
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	-- Same section, no transport needed
-
-
-	if pos1Section == pos2Section then
-
-
-		return false
-
-
-	end
-
-
-	
-
-
-	-- Check if transport is beneficial
-
-
-	if not CalcPhaennaTransport(pos1, pos2, pos1Section, pos2Section) then
-
-
-		return false
-
-
-	end
-
-
-	
-
-
-	-- Static format portal selection based on sections
-
-
-	local portalData = nil
-
-
-	
-
-
-	if In(pos1Section, 1) then
-
-
-		if In(pos2Section, 2) then
-
-
-			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 North"]
-
-
-		elseif In(pos2Section, 3,4,5) then
-
-
-			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 East"]
-
-
-		elseif In(pos2Section, 6,7,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 South"]
-
-
-		elseif In(pos2Section, 8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 West"]
-
-
-		end
-
-
-	elseif In(pos1Section, 2) then
-
-
-		if In(pos2Section, 1,6,18,17,16) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 South"]
-
-
-		elseif In(pos2Section, 3, 4, 5) then
-
-
-			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 East"]
-
-
-		elseif In(pos2Section, 8,9,10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 West"]
-
-
-		end
-
-
-	elseif In(pos1Section, 3) then
-
-
-		if In(pos2Section, 1,2,8,9,10,11,12) then
-
-
-			portalData = phaennaPortalPositions[3] and phaennaPortalPositions[3]["3 North"]
-
-
-		elseif In(pos2Section, 4,5,6,7,13,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
-
-
-			portalData = phaennaPortalPositions[3] and phaennaPortalPositions[3]["3 South"]
-
-
-		end
-
-
-	elseif In(pos1Section, 4) then
-
-
-		-- add 4 west
-
-
-		if In(pos2Section, 3,2,9) then
-
-
-			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 North"]
-
-
-		elseif In(pos2Section, 1,8,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
-
-
-			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 West"]
-
-
-		elseif In(pos2Section, 5,6,7,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 South"]
-
-
-		end
-
-
-	elseif In(pos1Section, 5) then
-
-
-		if In(pos2Section, 1,2,3,4,8,9,10,11,12) then
-
-
-			portalData = phaennaPortalPositions[5] and phaennaPortalPositions[5]["5 North"]
-
-
-		elseif In(pos2Section, 6,7,13,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[5] and phaennaPortalPositions[5]["5 West"]
-
-
-		end
-
-
-	elseif In(pos1Section, 6) then
-
-
-		if In(pos2Section, 1,2,3) then
-
-
-			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 North"]
-
-
-		elseif In(pos2Section, 4,5) then
-
-
-			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 East"]
-
-
-		elseif In(pos2Section, 7,8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 West"]
-
-
-		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 South"]
-
-
-		end
-
-
-	elseif In(pos1Section, 7) then
-
-
-		if In(pos2Section, 1,2,3,4,5,6) then
-
-
-			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 East"]
-
-
-		elseif In(pos2Section, 8,9,10,11,12) then
-
-
-			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 North"]
-
-
-		elseif In(pos2Section, 14,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
-
-
-			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 West"]
-
-
-		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 South"]
-
-
-		end
-
-
-	elseif In(pos1Section, 8) then
-
-
-		if In(pos2Section, 1,4,3,5) then
-
-
-			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 East"]
-
-
-		elseif In(pos2Section, 9,2) then
-
-
-			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 North"]
-
-
-		elseif In(pos2Section, 7,6,5,18,17,16,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 South"]
-
-
-		elseif In(pos2Section, 10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 West"]
-
-
-		end
-
-
-	elseif In(pos1Section, 9) then
-
-
-		if In(pos2Section, 1,2,3,4,5,6,7) then
-
-
-			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 East"]
-
-
-		elseif In(pos2Section, 8,7,6,18,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 South"]
-
-
-		elseif In(pos2Section, 10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 West"]
-
-
-		end
-
-
-	elseif In(pos1Section, 10) then
-
-
-		if In(pos2Section, 9,2,3) then
-
-
-			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 North"]
-
-
-		elseif In(pos2Section, 11,8,14,7,6,5,1,4,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 South East"]
-
-
-		elseif In(pos2Section, 12,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
-
-
-			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 South"]
-
-
-		end
-
-
-	elseif In(pos1Section, 11) then
-
-
-		if In(pos2Section, 10) then
-
-
-			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 North"]
-
-
-		elseif In(pos2Section, 14,15,16,17,7,18,13) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 South"]
-
-
-		elseif In(pos2Section, 8,1,4,3,5,6,7) then
-
-
-			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 East"]
-
-
-		elseif In(pos2Section, 12) then
-
-
-			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 West"]
-
-
-		end
-
-
-	elseif In(pos1Section, 12) then
-
-
-		if In(pos2Section, 10,9,2) then
-
-
-			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 North"]
-
-
-		elseif In(pos2Section, 13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 South"]
-
-
-		elseif In(pos2Section, 1,3,4,5,6,7,8,11,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 East"]
-
-
-		end
-
-
-	elseif In(pos1Section, 13) then
-
-
-		if In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 South"]
-
-
-		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12) then
-
-
-			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 West"]
-
-
-		elseif In(pos2Section, 14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 East"]
-
-
-		end
-
-
-	elseif In(pos1Section, 14) then
-
-
-		if In(pos2Section, 13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 West"]
-
-
-		elseif In(pos2Section, 1,2,3,4,5,6) then
-
-
-			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 North"]
-
-
-		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 South"]
-
-
-		elseif In(pos2Section, 7,8,9,10,11,12) then
-
-
-			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 East"]
-
-
-		end
-
-
-	elseif In(pos1Section, 15) then
-
-
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 North"]
-
-
-		elseif In(pos2Section, 16) then
-
-
-			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 South"]
-
-
-		elseif In(pos2Section, 17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 East"]
-
-
-		end
-
-
-	elseif In(pos1Section, 16) then
-
-
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[16] and phaennaPortalPositions[16]["16 North"]
-
-
-		elseif In(pos2Section, 17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[16] and phaennaPortalPositions[16]["16 East"]
-
-
-		end
-
-
-	elseif In(pos1Section, 17) then
-
-
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 North"]
-
-
-		elseif In(pos2Section, 16) then
-
-
-			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 South"]
-
-
-		elseif In(pos2Section, 12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 West"]
-
-
-		end
-
-
-	elseif In(pos1Section, 18) then
-
-
-		if In(pos2Section, 1,2,3,4,5,6,8,9,10,11,12) then
-
-
-			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 North"]
-
-
-		elseif In(pos2Section, 15,17,16) then
-
-
-			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 South"]
-
-
-		elseif In(pos2Section, 7,14,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 West"]
-
-
-		elseif In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 East"]
-
-
-		end
-
-
-	elseif In(pos1Section, 19) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-		-- Section 19 portals (requires version >= 9)
-
-
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18) then
-
-
-			portalData = phaennaPortalPositions[19] and phaennaPortalPositions[19]["19 North"]
-
-
-		elseif In(pos2Section, 20,21,22,23,24) then
-
-
-			portalData = phaennaPortalPositions[19] and phaennaPortalPositions[19]["19 South"]
-
-
-		end
-
-
-	elseif In(pos1Section, 20) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-		if In(pos2Section, 19,21,22) then
-
-
-			portalData = phaennaPortalPositions[20] and phaennaPortalPositions[20]["20 East"]
-
-
-		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,23,24) then
-
-
-			portalData = phaennaPortalPositions[20] and phaennaPortalPositions[20]["20 West"]
-
-
-		end
-
-
-	elseif In(pos1Section, 21) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-		if In(pos2Section, 19,20,22) then
-
-
-			portalData = phaennaPortalPositions[21] and phaennaPortalPositions[21]["21 South"]
-
-
-		elseif In(pos2Section, 23,24) then
-
-
-			portalData = phaennaPortalPositions[21] and phaennaPortalPositions[21]["21 East"]
-
-
-		end
-
-
-	elseif In(pos1Section, 22) and ffxivminion.PhaennaMapVersion >= 9 then
-
-
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,23,24) then
-
-
-			portalData = phaennaPortalPositions[22] and phaennaPortalPositions[22]["22 West"]
-
-
-		end
-
-
-	elseif In(pos1Section, 23) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-		if In(pos2Section, 24) then
-
-
-			portalData = phaennaPortalPositions[23] and phaennaPortalPositions[23]["23 South"]
-
-
-		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22) then
-
-
-			portalData = phaennaPortalPositions[23] and phaennaPortalPositions[23]["23 North"]
-
-
-		end
-
-
-	elseif In(pos1Section, 24) and ffxivminion.PhaennaMapVersion >= 15 then
-
-
-		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23) then
-
-
-			portalData = phaennaPortalPositions[24] and phaennaPortalPositions[24]["24 North"]
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	-- Check version requirements for portal
-
-
-	if portalData and portalData.requires then
-
-
-		if ffxivminion.PhaennaMapVersion < portalData.requires then
-
-
-			portalData = nil
-
-
-		end
-
-
-	end
-
-
-	
-
-
-	-- Fallback to FindPhaennaPortal if no static match found
-
-
-	if not portalData then
-
-
-		portalData = FindPhaennaPortal(pos1Section, pos2Section)
-
-
-	end
-
-
-	
-
-
-	if not portalData then
-
-
-		return false
-
-
-	end
-
-
-	
-
-
-	local portalPos = portalData.pos
-
-
-	local distance = math.distance2d(pos1, portalPos)
-
-
-	
-
-
-	if distance > 2 then
-
-
-		return true, function()
-
-
-			local newTask = ffxiv_task_movetopos.Create()
-
-
-			newTask.pos = portalPos
-
-
-			ml_task_hub:CurrentTask():AddSubTask(newTask)
-
-
-		end
-
-
-	else
-
-
-		return true, function()
-
-
-			Player:SetFacing(portalData.facing)
-
-
-			Player:Move(FFXIV.MOVEMENT.FORWARD)
-
-
-		end
-
-
-	end
-
-
-end
-
 if not ff.lastTransportCheck then
 	ff.lastTransportCheck = {
 		pos1 = nil,
@@ -9292,6 +7499,10 @@ function CalcMoonTransport(pos1, pos2, pos1Section, pos2Section)
 
 	-- Only calculate if all data is present
 	if pos1 and pos2 and centerPoints[pos1Section] and centerPoints[pos2Section] then
+		local distance = GetPathDistance(pos1, pos2)
+		if distance < 150 then
+			return false
+		end
 		local distance1 = GetPathDistance(pos1, pos2) * 1.5
 		local distance2 =
 			GetPathDistance(pos1, centerPoints[pos1Section]) +
@@ -9318,7 +7529,183 @@ function CalcMoonTransport(pos1, pos2, pos1Section, pos2Section)
 
 	return false
 end
+function CalcPhaennaTransport(pos1, pos2, pos1Section, pos2Section)
+	-- Check if positions are close to last check (within 100 units)
+	local last = ff.lastPhaennaTransportCheck
+	if last.pos1 and last.pos2 then
+		if math.distance2d(pos1, last.pos1) < 100 and math.distance2d(pos2, last.pos2) < 100 then
+			return last.result
+		end
+	end
 
+	-- Check for existing cached pathingData
+	if ff.phaennaPathingData[pos1Section] and ff.phaennaPathingData[pos1Section][pos2.x] and ff.phaennaPathingData[pos1Section][pos2.x][pos2.z] ~= nil then
+		local cached = ff.phaennaPathingData[pos1Section][pos2.x][pos2.z]
+		ff.lastPhaennaTransportCheck = { pos1 = pos1, pos2 = pos2, result = cached }
+		return cached
+	end
+
+	-- Only calculate if all data is present
+	if pos1 and pos2 and phaennaCenterPoints[pos1Section] and phaennaCenterPoints[pos2Section] then
+		local distance = GetPathDistance(pos1, pos2)
+		if distance < 150 then
+			return false
+		end
+		local distance1 = GetPathDistance(pos1, pos2) * 1.5
+		local distance2 =
+			GetPathDistance(pos1, phaennaCenterPoints[pos1Section]) +
+			GetPathDistance(phaennaCenterPoints[pos2Section], pos2)
+
+		-- Init pathingData table
+		ff.phaennaPathingData[pos1Section] = ff.phaennaPathingData[pos1Section] or {}
+		ff.phaennaPathingData[pos1Section][pos2.x] = ff.phaennaPathingData[pos1Section][pos2.x] or {}
+
+		local result
+		if distance1 > distance2 then
+			result = true
+		else
+			result = false
+		end
+
+		-- Save result in both pathingData and last check
+		ff.phaennaPathingData[pos1Section][pos2.x][pos2.z] = result
+		ff.lastPhaennaTransportCheck = { pos1 = pos1, pos2 = pos2, result = result }
+		return result
+	end
+
+	return false
+end
+-- Phaenna map functions (map ID 1291)
+-- Helper function to find the best portal for a section connection (cycles through portals)
+local portalCycleIndex = {}
+local portalCycleDirection = {}
+function GetPhaenna(pos, closest)
+	local closestIndex = 0
+	local closestDistance = math.huge
+	
+	local distance = math.distance2d(pos,phaennaCenterPoints[25])
+	if distance < phaennaCenterPoints[25].radius then
+		return 21
+	end
+	local distance = math.distance2d(pos,phaennaCenterPoints[26])
+	if distance < phaennaCenterPoints[26].radius then
+		return 22
+	end
+	for index, centerPos in pairs(phaennaCenterPoints) do
+		local distance = math.distance2d(pos, centerPos)
+		local threshold = IsNull(centerPos.radius, 150)
+		if not centerPos.markeronly then
+			if distance < closestDistance then
+				closestDistance = distance
+				closestIndex = index
+			end
+		end
+	end
+	
+	-- default if no match
+	return closestIndex
+end
+
+if not ff.phaennaPathingData then
+	ff.phaennaPathingData = {}
+end
+if not ff.lastPhaennaTransportCheck then
+	ff.lastPhaennaTransportCheck = {
+		pos1 = nil,
+		pos2 = nil,
+		result = nil
+	}
+end
+-- Oizys map functions (map ID 1310)
+function GetOizys(pos, closest)
+	local closestIndex = 0
+	local closestDistance = math.huge
+	
+	local distance = math.distance2d(pos,oizysCenterPoints[17])
+	if distance < oizysCenterPoints[17].radius then
+		return 8
+	end
+	
+	for index, centerPos in pairs(oizysCenterPoints) do
+		local distance = math.distance2d(pos, centerPos)
+		local threshold = IsNull(centerPos.radius, 150)
+		if not centerPos.markeronly then
+			if distance < closestDistance then
+				closestDistance = distance
+				closestIndex = index
+			end
+		end
+	end
+	
+	-- Return section if within 150 units of a center point
+	if closestDistance < 150 then
+		return closestIndex
+	end
+	
+	if closest then
+		return closestIndex
+	end
+	
+	return 0
+end
+
+if not ff.oizysPathingData then
+	ff.oizysPathingData = {}
+end
+if not ff.lastOizysTransportCheck then
+	ff.lastOizysTransportCheck = {
+		pos1 = nil,
+		pos2 = nil,
+		result = nil
+	}
+end
+
+function CalcOizysTransport(pos1, pos2, pos1Section, pos2Section)
+	-- Check if positions are close to last check (within 100 units)
+	local last = ff.lastOizysTransportCheck
+	if last.pos1 and last.pos2 then
+		if math.distance2d(pos1, last.pos1) < 100 and math.distance2d(pos2, last.pos2) < 100 then
+			return last.result
+		end
+	end
+
+	-- Check for existing cached pathingData
+	if ff.oizysPathingData[pos1Section] and ff.oizysPathingData[pos1Section][pos2.x] and ff.oizysPathingData[pos1Section][pos2.x][pos2.z] ~= nil then
+		local cached = ff.oizysPathingData[pos1Section][pos2.x][pos2.z]
+		ff.lastOizysTransportCheck = { pos1 = pos1, pos2 = pos2, result = cached }
+		return cached
+	end
+
+	-- Only calculate if all data is present
+	if pos1 and pos2 and oizysCenterPoints[pos1Section] and oizysCenterPoints[pos2Section] then
+		local distance = GetPathDistance(pos1, pos2)
+		if distance < 150 then
+			return false
+		end
+		local distance1 = GetPathDistance(pos1, pos2) * 1.5
+		local distance2 =
+			GetPathDistance(pos1, oizysCenterPoints[pos1Section]) +
+			GetPathDistance(oizysCenterPoints[pos2Section], pos2)
+
+		-- Init pathingData table
+		ff.oizysPathingData[pos1Section] = ff.oizysPathingData[pos1Section] or {}
+		ff.oizysPathingData[pos1Section][pos2.x] = ff.oizysPathingData[pos1Section][pos2.x] or {}
+
+		local result
+		if distance1 > distance2 then
+			result = true
+		else
+			result = false
+		end
+
+		-- Save result in both pathingData and last check
+		ff.oizysPathingData[pos1Section][pos2.x][pos2.z] = result
+		ff.lastOizysTransportCheck = { pos1 = pos1, pos2 = pos2, result = result }
+		return result
+	end
+
+	return false
+end
 function Transport1237(pos1,pos2)
 	local pos1 = pos1 or Player.pos
 	local pos2 = pos2
@@ -10439,6 +8826,482 @@ function Transport1237(pos1,pos2)
 	end 
 	return false
 end
+function Transport1291(pos1, pos2)
+	local pos1 = pos1 or Player.pos
+	local pos2 = pos2
+	local pos1Section = GetPhaenna(pos1)
+	local pos2Section = GetPhaenna(pos2, true)
+	
+	-- Check if we're on the Phaenna map
+	if Player.localmapid ~= 1291 then
+		return false
+	end
+	
+	-- cosmoliner introduced map 3
+	if ffxivminion.PhaennaMapVersion < 3 then
+		return false
+	end
+	
+	-- Need valid sections
+	if not pos1Section or pos1Section == 0 or not pos2Section or pos2Section == 0 then
+		return false
+	end
+	
+	-- Check map version requirements for specific sectors
+	-- Sectors 19, 20, 21, 22 require version >= 9
+	if In(pos1Section, 19, 20, 21, 22) or In(pos2Section, 19, 20, 21, 22) then
+		if ffxivminion.PhaennaMapVersion < 9 then
+			return false
+		end
+	end
+	
+	-- Sectors 23, 24 require version >= 15
+	if In(pos1Section, 23, 24) or In(pos2Section, 23, 24) then
+		if ffxivminion.PhaennaMapVersion < 15 then
+			return false
+		end
+	end
+	
+	-- Same section, no transport needed
+	if pos1Section == pos2Section then
+		return false
+	end
+	
+	-- Check if transport is beneficial
+	if not CalcPhaennaTransport(pos1, pos2, pos1Section, pos2Section) then
+		return false
+	end
+	
+	-- Static format portal selection based on sections
+	local portalData = nil
+	
+	if In(pos1Section, 1) then
+		if In(pos2Section, 2) then
+			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 North"]
+		elseif In(pos2Section, 3,4,5) then
+			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 East"]
+		elseif In(pos2Section, 6,7,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 South"]
+		elseif In(pos2Section, 8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[1] and phaennaPortalPositions[1]["1 West"]
+		end
+	elseif In(pos1Section, 2) then
+		if In(pos2Section, 1,6,18,17,16) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 South"]
+		elseif In(pos2Section, 3, 4, 5) then
+			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 East"]
+		elseif In(pos2Section, 8,9,10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[2] and phaennaPortalPositions[2]["2 West"]
+		end
+	elseif In(pos1Section, 3) then
+		if In(pos2Section, 1,2,8,9,10,11,12) then
+			portalData = phaennaPortalPositions[3] and phaennaPortalPositions[3]["3 North"]
+		elseif In(pos2Section, 4,5,6,7,13,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
+			portalData = phaennaPortalPositions[3] and phaennaPortalPositions[3]["3 South"]
+		end
+	elseif In(pos1Section, 4) then
+		-- add 4 west
+		if In(pos2Section, 3,2,9) then
+			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 North"]
+		elseif In(pos2Section, 1,8,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
+			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 West"]
+		elseif In(pos2Section, 5,6,7,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[4] and phaennaPortalPositions[4]["4 South"]
+		end
+	elseif In(pos1Section, 5) then
+		if In(pos2Section, 1,2,3,4,8,9,10,11,12) then
+			portalData = phaennaPortalPositions[5] and phaennaPortalPositions[5]["5 North"]
+		elseif In(pos2Section, 6,7,13,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[5] and phaennaPortalPositions[5]["5 West"]
+		end
+	elseif In(pos1Section, 6) then
+		if In(pos2Section, 1,2,3) then
+			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 North"]
+		elseif In(pos2Section, 4,5) then
+			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 East"]
+		elseif In(pos2Section, 7,8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 West"]
+		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[6] and phaennaPortalPositions[6]["6 South"]
+		end
+	elseif In(pos1Section, 7) then
+		if In(pos2Section, 1,2,3,4,5,6) then
+			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 East"]
+		elseif In(pos2Section, 8,9,10,11,12) then
+			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 North"]
+		elseif In(pos2Section, 14,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
+			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 West"]
+		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[7] and phaennaPortalPositions[7]["7 South"]
+		end
+	elseif In(pos1Section, 8) then
+		if In(pos2Section, 1,4,3,5) then
+			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 East"]
+		elseif In(pos2Section, 9,2) then
+			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 North"]
+		elseif In(pos2Section, 7,6,5,18,17,16,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 South"]
+		elseif In(pos2Section, 10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[8] and phaennaPortalPositions[8]["8 West"]
+		end
+	elseif In(pos1Section, 9) then
+		if In(pos2Section, 1,2,3,4,5,6,7) then
+			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 East"]
+		elseif In(pos2Section, 8,7,6,18,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 South"]
+		elseif In(pos2Section, 10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[9] and phaennaPortalPositions[9]["9 West"]
+		end
+	elseif In(pos1Section, 10) then
+		if In(pos2Section, 9,2,3) then
+			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 North"]
+		elseif In(pos2Section, 11,8,14,7,6,5,1,4,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 South East"]
+		elseif In(pos2Section, 12,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15  then
+			portalData = phaennaPortalPositions[10] and phaennaPortalPositions[10]["10 South"]
+		end
+	elseif In(pos1Section, 11) then
+		if In(pos2Section, 10) then
+			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 North"]
+		elseif In(pos2Section, 14,15,16,17,7,18,13) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 South"]
+		elseif In(pos2Section, 8,1,4,3,5,6,7) then
+			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 East"]
+		elseif In(pos2Section, 12) then
+			portalData = phaennaPortalPositions[11] and phaennaPortalPositions[11]["11 West"]
+		end
+	elseif In(pos1Section, 12) then
+		if In(pos2Section, 10,9,2) then
+			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 North"]
+		elseif In(pos2Section, 13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 South"]
+		elseif In(pos2Section, 1,3,4,5,6,7,8,11,14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[12] and phaennaPortalPositions[12]["12 East"]
+		end
+	elseif In(pos1Section, 13) then
+		if In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 South"]
+		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12) then
+			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 West"]
+		elseif In(pos2Section, 14,15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[13] and phaennaPortalPositions[13]["13 East"]
+		end
+	elseif In(pos1Section, 14) then
+		if In(pos2Section, 13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 West"]
+		elseif In(pos2Section, 1,2,3,4,5,6) then
+			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 North"]
+		elseif In(pos2Section, 15,16,17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 South"]
+		elseif In(pos2Section, 7,8,9,10,11,12) then
+			portalData = phaennaPortalPositions[14] and phaennaPortalPositions[14]["14 East"]
+		end
+	elseif In(pos1Section, 15) then
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 North"]
+		elseif In(pos2Section, 16) then
+			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 South"]
+		elseif In(pos2Section, 17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[15] and phaennaPortalPositions[15]["15 East"]
+		end
+	elseif In(pos1Section, 16) then
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[16] and phaennaPortalPositions[16]["16 North"]
+		elseif In(pos2Section, 17,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[16] and phaennaPortalPositions[16]["16 East"]
+		end
+	elseif In(pos1Section, 17) then
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,18) or In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 North"]
+		elseif In(pos2Section, 16) then
+			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 South"]
+		elseif In(pos2Section, 12,13,14,15) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[17] and phaennaPortalPositions[17]["17 West"]
+		end
+	elseif In(pos1Section, 18) then
+		if In(pos2Section, 1,2,3,4,5,6,8,9,10,11,12) then
+			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 North"]
+		elseif In(pos2Section, 15,17,16) then
+			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 South"]
+		elseif In(pos2Section, 7,14,13) or In(pos2Section, 23,24) and ffxivminion.PhaennaMapVersion >= 15 then
+			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 West"]
+		elseif In(pos2Section, 19,20,21,22) and ffxivminion.PhaennaMapVersion >= 9 then
+			portalData = phaennaPortalPositions[18] and phaennaPortalPositions[18]["18 East"]
+		end
+	elseif In(pos1Section, 19) and ffxivminion.PhaennaMapVersion >= 9 then
+		-- Section 19 portals (requires version >= 9)
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,23,24) then
+			portalData = phaennaPortalPositions[19] and phaennaPortalPositions[19]["19 North"]
+		elseif In(pos2Section, 20,21,22) then
+			portalData = phaennaPortalPositions[19] and phaennaPortalPositions[19]["19 South"]
+		end
+	elseif In(pos1Section, 20) and ffxivminion.PhaennaMapVersion >= 9 then
+		if In(pos2Section, 21,22) then
+			portalData = phaennaPortalPositions[20] and phaennaPortalPositions[20]["20 West"]
+		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,23,24) then
+			portalData = phaennaPortalPositions[20] and phaennaPortalPositions[20]["20 East"]
+		end
+	elseif In(pos1Section, 21) and ffxivminion.PhaennaMapVersion >= 9 then
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,23,24) then
+			portalData = phaennaPortalPositions[21] and phaennaPortalPositions[21]["21 South"]
+		elseif In(pos2Section, 22) then
+			portalData = phaennaPortalPositions[21] and phaennaPortalPositions[21]["21 East"]
+		end
+	elseif In(pos1Section, 22) and ffxivminion.PhaennaMapVersion >= 9 then
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,23,24) then
+			portalData = phaennaPortalPositions[22] and phaennaPortalPositions[22]["22 West"]
+		end
+	elseif In(pos1Section, 23) and ffxivminion.PhaennaMapVersion >= 15 then
+		if In(pos2Section, 24) then
+			portalData = phaennaPortalPositions[23] and phaennaPortalPositions[23]["23 South"]
+		elseif In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22) then
+			portalData = phaennaPortalPositions[23] and phaennaPortalPositions[23]["23 North"]
+		end
+	elseif In(pos1Section, 24) and ffxivminion.PhaennaMapVersion >= 15 then
+		if In(pos2Section, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23) then
+			portalData = phaennaPortalPositions[24] and phaennaPortalPositions[24]["24 North"]
+		end
+	end
+	
+	-- Check version requirements for portal
+	if portalData and portalData.requires then
+		if ffxivminion.PhaennaMapVersion < portalData.requires then
+			portalData = nil
+		end
+	end
+	
+	if not portalData then
+		return false
+	end
+	
+	local portalPos = portalData.pos
+	local distance = math.distance2d(pos1, portalPos)
+	
+	if distance > 2 then
+		return true, function()
+			local newTask = ffxiv_task_movetopos.Create()
+			newTask.pos = portalPos
+			ml_task_hub:CurrentTask():AddSubTask(newTask)
+		end
+	else
+		return true, function()
+			Player:SetFacing(portalData.facing)
+			Player:Move(FFXIV.MOVEMENT.FORWARD)
+		end
+	end
+end
+
+function Transport1310(pos1, pos2)
+	local pos1 = pos1 or Player.pos
+	local pos2 = pos2
+	local pos1Section = GetOizys(pos1)
+	local pos2Section = GetOizys(pos2, true)
+	
+	-- Check if we're on the Oizys map
+	if Player.localmapid ~= 1310 then
+		return false
+	end
+	
+	-- Need valid sections
+	if not pos1Section or pos1Section == 0 or not pos2Section or pos2Section == 0 then
+		return false
+	end
+	
+	-- Check map version requirements for specific sectors
+	-- Sectors 6, 7 require version >= 3
+	if In(pos1Section, 6, 7) or In(pos2Section, 6, 7) then
+		if not ffxivminion.OizysMapVersion or ffxivminion.OizysMapVersion < 3 then
+			return false
+		end
+	end
+	
+	-- Same section, no transport needed
+	if pos1Section == pos2Section then
+		return false
+	end
+	
+	-- Check if transport is beneficial
+	if not CalcOizysTransport(pos1, pos2, pos1Section, pos2Section) then
+		return false
+	end
+	
+	-- Portal selection based on sections
+	-- Portal naming: "X-Y" means portal in section X going to section Y
+	local portalData = nil
+	
+	if In(pos1Section, 1) then
+		if In(pos2Section, 2, 3, 4, 5, 13, 14, 15) then
+			portalData = oizysPortalPositions[1] and oizysPortalPositions[1]["1-2"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[1] and oizysPortalPositions[1]["1-8"]
+		elseif In(pos2Section, 8, 9, 10, 11) then
+			portalData = oizysPortalPositions[1] and oizysPortalPositions[1]["1-8"]
+		elseif In(pos2Section, 12, 16) then
+			portalData = oizysPortalPositions[1] and oizysPortalPositions[1]["1-12"]
+		end
+	elseif In(pos1Section, 2) then
+		if In(pos2Section, 1, 8, 12, 16) then
+			portalData = oizysPortalPositions[2] and oizysPortalPositions[2]["2-1"]
+		elseif In(pos2Section, 3, 5) then
+			portalData = oizysPortalPositions[2] and oizysPortalPositions[2]["2-3"]
+		elseif In(pos2Section, 4) then
+			portalData = oizysPortalPositions[2] and oizysPortalPositions[2]["2-4"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[2] and oizysPortalPositions[2]["2-4"]
+		elseif In(pos2Section, 13, 14, 15) then
+			portalData = oizysPortalPositions[2] and oizysPortalPositions[2]["2-13"]
+		end
+	elseif In(pos1Section, 3) then
+		if In(pos2Section, 1, 2, 8, 12, 13, 16) then
+			portalData = oizysPortalPositions[3] and oizysPortalPositions[3]["3-2"]
+		elseif In(pos2Section, 4) then
+			portalData = oizysPortalPositions[3] and oizysPortalPositions[3]["3-4"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[3] and oizysPortalPositions[3]["3-4"]
+		elseif In(pos2Section, 5, 14, 15) then
+			portalData = oizysPortalPositions[3] and oizysPortalPositions[3]["3-5"]
+		end
+	elseif In(pos1Section, 4) then
+		if In(pos2Section, 1, 2, 13) then
+			portalData = oizysPortalPositions[4] and oizysPortalPositions[4]["4-2"]
+		elseif In(pos2Section, 3, 5, 14, 15) then
+			portalData = oizysPortalPositions[4] and oizysPortalPositions[4]["4-3"]
+		elseif In(pos2Section, 8, 9, 10, 11, 12, 16) then
+			portalData = oizysPortalPositions[4] and oizysPortalPositions[4]["4-6"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[4] and oizysPortalPositions[4]["4-6"]
+		end
+	elseif In(pos1Section, 5) then
+		if In(pos2Section, 1, 2, 3, 8, 12, 13) then
+			portalData = oizysPortalPositions[5] and oizysPortalPositions[5]["5-3"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[5] and oizysPortalPositions[5]["5-3"]
+		elseif In(pos2Section, 4, 9, 10, 11, 14, 15, 16) then
+			portalData = oizysPortalPositions[5] and oizysPortalPositions[5]["5-4"]
+		end
+	elseif In(pos1Section, 6) and ffxivminion.OizysMapVersion >= 3 then
+		if In(pos2Section, 2, 3, 4, 5, 13, 14, 15) then
+			portalData = oizysPortalPositions[6] and oizysPortalPositions[6]["6-4"]
+		elseif In(pos2Section, 7) then
+			portalData = oizysPortalPositions[6] and oizysPortalPositions[6]["6-7"]
+		elseif In(pos2Section, 1, 8, 9, 10, 11, 12, 16) then
+			portalData = oizysPortalPositions[6] and oizysPortalPositions[6]["6-8"]
+		end
+	elseif In(pos1Section, 7) and ffxivminion.OizysMapVersion >= 3 then
+		if In(pos2Section, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16) then
+			portalData = oizysPortalPositions[7] and oizysPortalPositions[7]["7-6"]
+		end
+	elseif In(pos1Section, 8) then
+		if In(pos2Section, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16) then
+			portalData = oizysPortalPositions[8] and oizysPortalPositions[8]["8-1"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[8] and oizysPortalPositions[8]["8-6"]
+		elseif In(pos2Section, 9, 10, 11) then
+			portalData = oizysPortalPositions[8] and oizysPortalPositions[8]["8-9"]
+		end
+	elseif In(pos1Section, 9) then
+		if In(pos2Section, 1, 2, 3, 4, 5, 8, 12, 13, 14, 15, 16) then
+			portalData = oizysPortalPositions[9] and oizysPortalPositions[9]["9-8"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[9] and oizysPortalPositions[9]["9-8"]
+		elseif In(pos2Section, 10) then
+			portalData = oizysPortalPositions[9] and oizysPortalPositions[9]["9-10"]
+		elseif In(pos2Section, 11) then
+			portalData = oizysPortalPositions[9] and oizysPortalPositions[9]["9-11"]
+		end
+	elseif In(pos1Section, 10) then
+		if In(pos2Section, 1, 8) then
+			portalData = oizysPortalPositions[10] and oizysPortalPositions[10]["10-8"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[10] and oizysPortalPositions[10]["10-8"]
+		elseif In(pos2Section, 9, 11) then
+			portalData = oizysPortalPositions[10] and oizysPortalPositions[10]["10-9"]
+		elseif In(pos2Section, 2, 3, 4, 5, 13, 14, 15) then
+			portalData = oizysPortalPositions[10] and oizysPortalPositions[10]["10-11"]
+		elseif In(pos2Section, 12, 16) then
+			portalData = oizysPortalPositions[10] and oizysPortalPositions[10]["10-12"]
+		end
+	elseif In(pos1Section, 11) then
+		if In(pos2Section, 1, 8, 9, 12, 16) then
+			portalData = oizysPortalPositions[11] and oizysPortalPositions[11]["11-9"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[11] and oizysPortalPositions[11]["11-9"]
+		elseif In(pos2Section, 2, 3, 4, 5, 10, 13, 14, 15) then
+			portalData = oizysPortalPositions[11] and oizysPortalPositions[11]["11-10"]
+		end
+	elseif In(pos1Section, 12) then
+		if In(pos2Section, 1, 2, 3, 4, 5, 8, 9) then
+			portalData = oizysPortalPositions[12] and oizysPortalPositions[12]["12-1"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[12] and oizysPortalPositions[12]["12-1"]
+		elseif In(pos2Section, 10, 11) then
+			portalData = oizysPortalPositions[12] and oizysPortalPositions[12]["12-10"]
+		elseif In(pos2Section, 13, 14, 15) then
+			portalData = oizysPortalPositions[12] and oizysPortalPositions[12]["12-13"]
+		elseif In(pos2Section, 16) then
+			portalData = oizysPortalPositions[12] and oizysPortalPositions[12]["12-16"]
+		end
+	elseif In(pos1Section, 13) then
+		if In(pos2Section, 1, 2, 3, 4, 5, 8, 9, 10, 11) then
+			portalData = oizysPortalPositions[13] and oizysPortalPositions[13]["13-2"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[13] and oizysPortalPositions[13]["13-2"]
+		elseif In(pos2Section, 12, 16) then
+			portalData = oizysPortalPositions[13] and oizysPortalPositions[13]["13-12"]
+		elseif In(pos2Section, 14, 15) then
+			portalData = oizysPortalPositions[13] and oizysPortalPositions[13]["13-14"]
+		end
+	elseif In(pos1Section, 14) then
+		if In(pos2Section, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13) then
+			portalData = oizysPortalPositions[14] and oizysPortalPositions[14]["14-13"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[14] and oizysPortalPositions[14]["14-13"]
+		elseif In(pos2Section, 15) then
+			portalData = oizysPortalPositions[14] and oizysPortalPositions[14]["14-15"]
+		elseif In(pos2Section, 16) then
+			portalData = oizysPortalPositions[14] and oizysPortalPositions[14]["14-16"]
+		end
+	elseif In(pos1Section, 15) then
+		if In(pos2Section, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14) then
+			portalData = oizysPortalPositions[15] and oizysPortalPositions[15]["15-14"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[15] and oizysPortalPositions[15]["15-14"]
+		elseif In(pos2Section, 16) then
+			portalData = oizysPortalPositions[15] and oizysPortalPositions[15]["15-16"]
+		end
+	elseif In(pos1Section, 16) then
+		if In(pos2Section, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13) then
+			portalData = oizysPortalPositions[16] and oizysPortalPositions[16]["16-12"]
+		elseif In(pos2Section, 6, 7) and ffxivminion.OizysMapVersion >= 3 then
+			portalData = oizysPortalPositions[16] and oizysPortalPositions[16]["16-12"]
+		elseif In(pos2Section, 14, 15) then
+			portalData = oizysPortalPositions[16] and oizysPortalPositions[16]["16-14"]
+		end
+	end
+	
+	-- No valid portal found
+	if not portalData then
+		return false
+	end
+	
+	-- Move to portal or enter it
+	local portalPos = portalData.pos
+	local distance = math.distance2d(pos1, portalPos)
+	
+	if distance > 2 then
+		return true, function()
+			local newTask = ffxiv_task_movetopos.Create()
+			newTask.pos = portalPos
+			ml_task_hub:CurrentTask():AddSubTask(newTask)
+		end
+	else
+		return true, function()
+			Player:SetFacing(portalData.facing)
+			Player:Move(FFXIV.MOVEMENT.FORWARD)
+		end
+	end
+end
+
 function Transport139(pos1,pos2)
 	local pos1 = pos1 or Player.pos
 	local pos2 = pos2
@@ -10480,6 +9343,16 @@ function Transport139(pos1,pos2)
 	
 	return false			
 end
+
+-- Helper function to check if portal meets version requirements
+local function PortalMeetsVersion(portalData)
+	if not portalData then
+		return false
+	end
+	local requiredVersion = portalData.requires or 3
+	return ffxivminion.PhaennaMapVersion >= requiredVersion
+end
+
 
 function Transport156(pos1,pos2)
 	local pos1 = pos1 or Player.pos
@@ -13407,6 +12280,8 @@ function FindClosestMesh(pos,distance,checkcubes,cubesonly)
 			if (p.distance <= minDist) then
 				closest = p
 				closestDistance = p.distance
+				d("closest 1 = ")
+				d(p)
 			end
 		end
 	end
@@ -13417,12 +12292,15 @@ function FindClosestMesh(pos,distance,checkcubes,cubesonly)
 			if (p.distance <= minDist) then
 				if (p.distance < closestDistance) then
 					closest = p
+					d("closest 2 = ")
+					d(p)
 				end
 			end
 		end
 	end
 	
 	if (closest) then
+	d("return 1")
 		return closest
 	end
 	
@@ -13434,6 +12312,8 @@ function FindClosestMesh(pos,distance,checkcubes,cubesonly)
 		local p = NavigationManager:GetClosestPointOnMesh(trypos)
 		if (table.valid(p)) then
 			if (p.distance <= minDist) then	
+				d("closest 3 = ")
+				d(p)
 				return p
 			end
 		end
@@ -13444,10 +12324,13 @@ function FindClosestMesh(pos,distance,checkcubes,cubesonly)
 		local p = NavigationManager:GetClosestPointOnMesh(trypos)
 		if (table.valid(p) and p.distance <= minDist) then	
 			if (p.distance <= minDist) then	
+				d("closest 4 = ")
+				d(p)
 				return p
 			end
 		end
 	end
+	d("failed 1")
 	return nil
 end
 function IsEntityReachable(entityid,range)
@@ -14050,4 +12933,66 @@ function CheckDirectorTextIndex(...)
 	end
 	
 	return false
+end
+
+-- Function to save portal position (Moon map)
+function SavePortalPosition(section, portalName, pos, facing)
+	if not section or not portalName or not pos or not facing then
+		return false
+	end
+	if not portalPositions[section] then
+		portalPositions[section] = {}
+	end
+	portalPositions[section][portalName] = {
+		pos = {x = pos.x, y = pos.y, z = pos.z},
+		facing = facing
+	}
+	return true
+end
+
+-- Function to save center point (Phaenna map)
+function SavePhaennaCenterPoint(section, pos)
+	if not section or not pos then
+		return false
+	end
+	phaennaCenterPoints[section] = {x = pos.x, y = pos.y, z = pos.z}
+	return true
+end
+
+-- Function to save portal position (Phaenna map)
+function SavePhaennaPortalPosition(section, portalName, pos, facing)
+	if not section or not portalName or not pos or not facing then
+		return false
+	end
+	if not phaennaPortalPositions[section] then
+		phaennaPortalPositions[section] = {}
+	end
+	phaennaPortalPositions[section][portalName] = {
+		pos = {x = pos.x, y = pos.y, z = pos.z},
+		facing = facing
+	}
+	return true
+end
+-- Function to save center point (Oizys map)
+function SaveOizysCenterPoint(section, pos)
+	if not section or not pos then
+		return false
+	end
+	OizysCenterPoints[section] = {x = pos.x, y = pos.y, z = pos.z}
+	return true
+end
+
+-- Function to save portal position (Oizys map)
+function SaveOizysPortalPosition(section, portalName, pos, facing)
+	if not section or not portalName or not pos or not facing then
+		return false
+	end
+	if not OizysPortalPositions[section] then
+		OizysPortalPositions[section] = {}
+	end
+	OizysPortalPositions[section][portalName] = {
+		pos = {x = pos.x, y = pos.y, z = pos.z},
+		facing = facing
+	}
+	return true
 end
