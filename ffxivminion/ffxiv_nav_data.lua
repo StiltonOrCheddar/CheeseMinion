@@ -406,21 +406,35 @@ ffxiv_map_nav.data = {
 			{id = 132, cost = 1, x = -129.454391,	z = -36.090492,  	y = 5.504999,	h = 1.396102},
 		},
 		[152] = {
-			{id = 152, cost = 3, x = 179.866, y = -2.239, z = -241.585, h = 1, b = 1001263, i = 1
-				, requires =  {
-					["Player.level >= 10"] = true,
-				}
-				, conversationstrings = {
+            {id = 152, cost = 3, x = 179.866, y = -2.239, z = -241.585, h = 1, b = 1001263, i = 1
+                , requires =  {
+                    ["Player.level >= 10 and GetPatchLevel() < 7.5"] = true,
+                }
+                , conversationstrings = {
                     ["E"] = "Purchase Passage to Sweetbloom Pier",
                     ["J"] = "「花蜜桟橋」へ行く",
                     ["G"] = "Zum Honigblumen-Steg",
                     ["F"] = "Aller à la jetée du Bouquet",
                     ["CN"] = "前往花蜜栈桥",
                     ["KR"] = "'꽃꿀 나루'로 이동",
-					["TC"] = "前往花蜜棧橋",
+                    ["TC"] = "前往花蜜棧橋",
                 },
-			},
-		},
+            },
+            {id = 152, cost = 3, x = 179.866, y = -2.239, z = -241.585, h = 1, b = 1001263, i = 1
+                , requires =  {
+                    ["Player.level >= 10 and GetPatchLevel() >= 7.5"] = true,
+                }
+                , conversationstrings = {
+                    ["E"] = "Seek Passage to Sweetbloom Pier",
+                    ["J"] = "「花蜜桟橋」へ行く",
+                    ["G"] = "Zum Honigblumen-Steg",
+                    ["F"] = "Aller à la jetée du Bouquet",
+                    ["CN"] = "前往花蜜栈桥",
+                    ["KR"] = "'꽃꿀 나루'로 이동",
+                    ["TC"] = "前往花蜜棧橋",
+                },
+            },
+        },
 		[154] = {
 			{id = 154, cost = 5, x = -207.365845,	z = -95.740646,	    y = 10.368533,	h = -1.571268},
 		},
