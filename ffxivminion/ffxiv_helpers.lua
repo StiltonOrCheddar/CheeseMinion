@@ -3935,7 +3935,7 @@ function IsTank(var)
 end
 function IsGatherer(jobID)
 	local jobID = tonumber(jobID)
-	if jobID ~= nil and (jobID >= 16 and jobID <= 18) then
+	if jobID ~= nil and (jobID >= 16 and jobID <= 17) then
 		return true
 	end
 	
