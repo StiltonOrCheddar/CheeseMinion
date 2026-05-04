@@ -1709,28 +1709,9 @@ Quest: Completes quests based on a questing profile.\
 					if (GUI:IsItemHovered()) then
 						GUI:SetTooltip(GetString("Help, Report and Faqs."))
 					end
-					local acrEnabled = false
-					if (IsGatherer(Player.job)) then
-						if (gACREnabledGather) then
-							acrEnabled = true
-						end
-					elseif (IsCrafter(Player.job)) then
-						if (gACREnabledCraft) then
-							acrEnabled = true
-						end
-					elseif (IsFighter(Player.job)) then
-						if (IsPVPMap(Player.localmapid)) then
-							if (gACREnabledPVP) then
-								acrEnabled = true
-							end
-						else
-							if (gACREnabled) then
-								acrEnabled = true
-							end
-						end
-					end
+					local acrEnabled = gACREnabled == true
 					local inPvP = IsPVPMap(Player.localmapid)
-					local acrValid = (not inPvP and acrEnabled and table.valid(gACRSelectedProfiles) and gACRSelectedProfiles[Player.job]) or (inPvP and gACREnabledPVP and table.valid(gACRSelectedPVPProfiles) and gACRSelectedPVPProfiles[Player.job])
+					local acrValid = (not inPvP and acrEnabled and table.valid(gACRSelectedProfiles) and gACRSelectedProfiles[Player.job]) or (inPvP and acrEnabled and table.valid(gACRSelectedPVPProfiles) and gACRSelectedPVPProfiles[Player.job])
 
 					if (not acrValid) then
 						GUI:AlignFirstTextHeightToWidgets()
@@ -2842,9 +2823,10 @@ invalid name or haven't chosen one."))
 					GUI:Text("Level: ");
 					GUI:SameLine();
 					GUI:Text(tostring(Player.level))
+					local acrEnabled = gACREnabled == true
 					local inPvP = IsPVPMap(Player.localmapid)
 					local pveACRValid = (not inPvP and acrEnabled and table.valid(gACRSelectedProfiles) and gACRSelectedProfiles[Player.job])
-					local pvpACRValid = (inPvP and gACREnabledPVP and table.valid(gACRSelectedPVPProfiles) and gACRSelectedPVPProfiles[Player.job])
+					local pvpACRValid = (inPvP and acrEnabled and table.valid(gACRSelectedPVPProfiles) and gACRSelectedPVPProfiles[Player.job])
 					--local acrValid = gACREnabled and (gACRSelectedProfiles[Player.job])
 					if pveACRValid then
 						GUI:Text("ACR Profile: ");
