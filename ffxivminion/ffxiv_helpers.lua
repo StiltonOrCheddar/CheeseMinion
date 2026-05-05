@@ -5749,6 +5749,9 @@ local pvpMaps = {
     [1294] = true, -- ???, ウルヴズジェイル, The Bayside Battleground
 
 	[1313] = true, -- worqor chirteh (triumph)
+
+	[1357] = true, -- ???, ウルヴズジェイル, Archeia Harmonias
+    [1358] = true, -- ???, ウルヴズジェイル, Archeia Harmonias
 }
 function IsPVPMap(mapid)
     local mapid = tonumber(mapid) or Player.localmapid
